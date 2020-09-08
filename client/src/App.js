@@ -4,7 +4,7 @@ import StatisticSummary from './components/Statistic';
 import { Layout } from 'antd';
 import './App.css';
 const axios = require("axios").default;
-const { Header, Footer, Sider, Content } = Layout;
+const { Header, Footer, Content } = Layout;
 
 class App extends Component {
 
