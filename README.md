@@ -9,13 +9,13 @@ New Project for COVID19 with new Datasource and revamped back-end + front-end
 ## How to Run
 ### Manually
 First we need to Run the Server: 
-    1. ```cd server```
-    2. ``` npm install```
-    3. ``` npm start ```
+    -1. ```cd server```
+    -2. ``` npm install```
+    -3. ``` npm start ```
 then open another terminal, and run the client: 
-    1. ```cd client```
-    2. ```npm install```
-    3. ```npm start```
+    -1. ```cd client```
+    -2. ```npm install```
+    -3. ```npm start```
 
 ### Using Docker
 On the root directory run: ```docker-compose up```
