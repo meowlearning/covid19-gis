@@ -17,9 +17,10 @@ class App extends Component {
 
 
   componentDidMount() {
-    axios.get("http://localhost:8393/api/data")
+    axios.get("/api/data")
       .then(({ data }) => {
         console.log(data)
+        console.log("/api/data")
         // construct the data
         let positions = [];
         let confirmedCaseTotal = 0;
