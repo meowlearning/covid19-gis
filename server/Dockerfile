@@ -1,5 +1,5 @@
-# Use a lighter version of Node as a parent image
-FROM mhart/alpine-node:8.11.4
+# Use a newest stable version of Node as a parent image
+FROM node:erbium
 # Set the working directory to /api
 WORKDIR /server
 # copy package.json into the container at /api
