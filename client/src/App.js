@@ -17,28 +17,34 @@ class App extends Component {
 
 
   componentDidMount() {
-    axios.get("http://localhost:8393/api/data")
-      .then(({ data }) => {
-        console.log(data)
-        // construct the data
-        let positions = [];
-        let confirmedCaseTotal = 0;
-        let deathCaseTotal = 0;
-        let recoveredCaseTotal = 0;
-        data.data.map((d) => {
+    // check data from session storage
+    let data = sessionStorage.getItem("covid19-data");
+    if(data){ // if data exist use the data
+      data = JSON.parse(data);
+      this.setState({
+        data: data
+      })
+    }else{ // if data is not exist in session storage fetch the data from the server
+      axios.get("http://localhost:8393/api/data")
+        .then(({ data }) => {
+          // construct the data
+          let positions = [];
+          let confirmedCaseTotal = 0;
+          let deathCaseTotal = 0;
+          let recoveredCaseTotal = 0;
+          data.data.map((d) => {
 
-          // data for Heatmap
-          if (d.data.location !== null) {
-            positions.push({ lat: d.data.location.coordinates[1], lng: d.data.location.coordinates[0] })
-          }
-          // data for statistic
-          confirmedCaseTotal += d.data.case.confirmed;
-          deathCaseTotal += d.data.case.death;
-          recoveredCaseTotal += d.data.case.recovered;
-        });
+            // data for Heatmap
+            if (d.data.location !== null) {
+              positions.push({ lat: d.data.location.coordinates[1], lng: d.data.location.coordinates[0] })
+            }
+            // data for statistic
+            confirmedCaseTotal += d.data.case.confirmed;
+            deathCaseTotal += d.data.case.death;
+            recoveredCaseTotal += d.data.case.recovered;
+          });
 
-        this.setState({
-          data: {
+          let tempData = {
             map: {
               positions: positions,
               options: {
@@ -51,9 +57,15 @@ class App extends Component {
               recovered: recoveredCaseTotal
             }
           }
-        })
 
-      });
+          this.setState({
+            data: tempData
+          })
+          
+          // store data in session storage for later use
+          sessionStorage.setItem("covid19-data", JSON.stringify(tempData));
+        });
+    }
   }
 
 
