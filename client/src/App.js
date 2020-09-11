@@ -44,6 +44,7 @@ class App extends Component {
             recoveredCaseTotal += d.data.case.recovered;
           });
 
+          // construct the data for the Heatmap
           let tempData = {
             map: {
               positions: positions,
