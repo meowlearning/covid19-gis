@@ -17,7 +17,7 @@ class App extends Component {
 
 
   componentDidMount() {
-    axios.get("/api/data")
+    axios.get("http://localhost:8393/api/data")
       .then(({ data }) => {
         console.log(data)
         console.log("/api/data")
