@@ -55,7 +55,7 @@ router.get('/data', async function(req, res, next) {
           res.send({"data" : resJSON})
         });
     });
-  })
+  });
 });
 
 module.exports = router;
