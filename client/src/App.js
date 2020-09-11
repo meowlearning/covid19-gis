@@ -25,12 +25,13 @@ class App extends Component {
         data: data
       })
     }else{ // if data is not exist in session storage fetch the data from the server
-      axios.get("http://localhost:8393/api/data")
+      axios.get("/api/data")
         .then(({ data }) => {
           // construct the data
           let positions = [];
           let confirmedCaseTotal = 0;
           let deathCaseTotal = 0;
+          
           let recoveredCaseTotal = 0;
           data.data.map((d) => {
 
