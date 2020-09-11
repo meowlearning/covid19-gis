@@ -6,7 +6,7 @@ import "./HeatMap.css";
 class HeatMap extends Component {
     state = {
         API_KEY: {
-            google: "AIzaSyAWXpBEjciqdQaoVLP474k7VhrNVsItVzw"
+            google: "AIzaSyA-AXXI0TXe55-vlmyJPOFg8gL5bnATQMY"
         },
         default: {
             map: {
