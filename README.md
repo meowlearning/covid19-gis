@@ -8,6 +8,9 @@ New Project for COVID19 with new Datasource and revamped back-end + front-end
 ### 08 September 2020
 ![Current Progress Sep 08](https://github.com/meowlearning/covid19-gis/blob/master/notes/GIS-Sep-08.PNG?raw=true)
 
+## Website
+https://covid19-gis-project.herokuapp.com/
+
 ## How to Run
 ### Manually
 First we need to Run the Server: 
