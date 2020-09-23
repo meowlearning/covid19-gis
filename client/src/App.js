@@ -33,7 +33,6 @@ class App extends Component {
           let deathCaseTotal = 0;
           let recoveredCaseTotal = 0;
           data.data.map((d) => {
-
             // data for Heatmap
             if (d.data.location !== null) {
               positions.push({ lat: d.data.location.coordinates[1], lng: d.data.location.coordinates[0] })
@@ -61,7 +60,7 @@ class App extends Component {
           this.setState({
             data: tempData
           })
-          
+
           // store data in session storage for later use
           sessionStorage.setItem("covid19-data", JSON.stringify(tempData));
         });
