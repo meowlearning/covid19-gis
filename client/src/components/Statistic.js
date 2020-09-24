@@ -19,6 +19,9 @@ class StatisticSummary extends Component {
                         <Statistic title="Recovered" value={this.props.data.recovered} valueStyle={{ color: '#3f8600' }} />
                     </div>
                     : <Spin className="Loading" tip="Loading..." />}
+                <div>
+                    {this.props.children}
+                </div>
             </div>
         );
     }

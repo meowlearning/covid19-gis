@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@nivo/line": "^0.62.0",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
@@ -12,8 +13,10 @@
     "google-maps-react": "^2.0.6",
     "i": "^0.3.6",
     "npm": "^6.14.8",
+    "plotly.js": "^1.55.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-plotly.js": "^2.5.0",
     "react-scripts": "3.4.3"
   },
   "scripts": {

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import GoogleMapReact from 'google-map-react';
-import Marker from "./Marker";
-import { Spin } from 'antd';
+
+import { Spin, Popover } from 'antd';
 import "./HeatMap.css";
 
 
@@ -66,7 +66,6 @@ class HeatMap extends Component {
             <div className="Map" style={{ height: "50vh", width: "100%" }}>
                 {(this.props.coordinates != null) ?
                     <GoogleMapReact
-                        ref={(el) => this._googleMap = el}
                         bootstrapURLKeys={{ key: this.state.API_KEY.google }}
                         defaultCenter={this.state.default.map.center}
                         center={this.state.selected.map.center}
@@ -75,14 +74,7 @@ class HeatMap extends Component {
                         heatmapLibrary={true}
                         heatmap={this.props.coordinates}
                     >
-                        {((this.state.selected.map.center.lat !== 0) && (this.state.selected.map.center.lng !== 0)) ?
-                            <Marker
-                                lat={this.state.selected.map.center.lat}
-                                lng={this.state.selected.map.center.lng}
-                                visible={true}
-                                title={this.state.countryName}
-                            /> : null}
-
+                        {this.props.children}
                     </GoogleMapReact>
                     : <Spin className="Loading" tip="Loading..." />}
 

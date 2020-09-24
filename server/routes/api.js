@@ -12,7 +12,7 @@ const client = new MongoClient(DATABASE_URL, {
   useUnifiedTopology: true
 });
 
-/* GET COVID data for Australia regions. */
+
 router.get('/data', async function (req, res, next) {
   // get the data from the Database
   client.connect((err) => {
