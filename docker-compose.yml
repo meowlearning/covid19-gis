@@ -19,8 +19,6 @@ services:
         - redis
     environment:
       - REDIS_URL=redis://cache
-    # command:
-      # - concurrently "npm run-script server" "npm start"
   # server:
   #   build: ./server
   #   expose: 

@@ -1,10 +1,6 @@
-const { json } = require('body-parser');
-const { query } = require('express');
 const express = require('express');
 const router = express.Router();
-const axios = require("axios").default;
 const redis = require('redis');
-const qs = require('qs');
 
 
 // connect to the Database
