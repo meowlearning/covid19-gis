@@ -1,7 +1,7 @@
 # Use a newest stable version of Node as a parent image
 FROM node:erbium
 # Copy the current directory contents into the container at /api
-COPY ./server/ /server/
+COPY . /server/
 # Set the working directory to /api
 WORKDIR /server
 # install dependencies

@@ -1,4 +1,3 @@
-# Evironment
 # Use a newest stable version of Node as a parent image
 FROM node:erbium
 # Install concurrently to start server and client together

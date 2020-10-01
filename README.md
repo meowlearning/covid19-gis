@@ -7,6 +7,10 @@ New Project for COVID19 with new Datasource and revamped back-end + front-end
 ## Current Progress
 ### 08 September 2020
 ![Current Progress Sep 08](https://github.com/meowlearning/covid19-gis/blob/master/notes/GIS-Sep-08.PNG?raw=true)
+### 01 October 2020
+![Current Progress Oct 01 pt.1](https://github.com/meowlearning/covid19-gis/blob/master/notes/GIS-Octo-01pt.1.png?raw=true)
+![Current Progress Oct 01 pt.2](https://github.com/meowlearning/covid19-gis/blob/master/notes/GIS-Octo-01pt.2.png?raw=true)
+
 
 ## Website
 https://covid19-gis-project.herokuapp.com/

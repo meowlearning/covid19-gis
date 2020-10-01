@@ -5,8 +5,13 @@ services:
     container_name: cache
     expose:
       - 6379
+    ports:
+      - "6379:6379"
   web:
     build: .
+    expose:
+        - 8393
+        - 3000
     ports:
         - "8393:8393"
         - "3000:3000"
@@ -20,6 +25,10 @@ services:
   #       - "8393"
   #   ports:
   #     - "8393:8393"
+  #   links:
+  #       - redis
+  #   environment:
+  #     - REDIS_URL=redis://cache
   #   command: npm start
   # client:
   #   build: ./client
@@ -27,8 +36,6 @@ services:
   #       - "3000"
   #   ports:
   #     - "3000:3000"
-  #   links:
-  #       - server
   #   stdin_open: true
   #   tty: true
   #   command: npm start
