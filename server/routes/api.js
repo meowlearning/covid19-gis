@@ -112,27 +112,31 @@ router.get('/marker', async (req, res, next) => {
     }
   ]
 
+  // get data from the cache
   redis_client.get(key, async (err, result) => {
     if (err) res.status(500).send(err);
 
+    // check if data present in cache
     else if(result) {
       res.status(200).json(JSON.parse(result));
     } else {
+      // get data from mongodb and store in cache
       mongodb_client.connect(async (err) => {
         if (err) return res.status(500).send(err);
     
+        // get result from mongodb
         mongodb_client.db("covid19jhu").collection("UID_ISO_FIPS_LookUp_Table").aggregate(pipeline).toArray(async (err, result) => {
           if (err) return res.status(500).send(err);
     
+          // store result in redis cache
           redis_client.setex(key, 28800, JSON.stringify({ source: 'Redis cache', ...result[0] }));
 
+          // send the result back to client
           res.send({ source: 'Mongodb', ...result[0] });
         })
       })
     }
   })
-
-
 })
 
 
