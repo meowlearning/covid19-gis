@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require("axios").default;
 const redis = require('redis');
+const qs = require('qs');
 
 
 // connect to the Database
@@ -67,7 +68,9 @@ router.get('/data', async function (req, res, next) {
 
 router.post('/graph', async (req, res, next) => {
   let selected_countries = req.body.countries;
+  console.log(selected_countries);
   let selected_case = req.body.case;
+  console.log(selected_case);
   let key = selected_countries.sort().join("_").concat('_', selected_case);
   console.log(key);
   
@@ -196,8 +199,6 @@ router.post('/graph', async (req, res, next) => {
       
     }
   });
-
-
 });
 
 module.exports = router;
