@@ -91,6 +91,51 @@ router.get('/data', async function (req, res, next) {
 
 });
 
+
+router.get('/marker', async (req, res, next) => {
+  let country = req.query.country;
+  let key = `marker_${country}`;
+  let pipeline = [
+    {
+      '$match': {
+        'Country_Region': country,
+        'Province_State': ''
+      }
+    }, {
+      '$project': {
+        'country': '$Country_Region',
+        'coords': {
+          'lat': '$Lat',
+          'lng': '$Long_'
+        }
+      }
+    }
+  ]
+
+  redis_client.get(key, async (err, result) => {
+    if (err) res.status(500).send(err);
+
+    else if(result) {
+      res.status(200).json(JSON.parse(result));
+    } else {
+      mongodb_client.connect(async (err) => {
+        if (err) return res.status(500).send(err);
+    
+        mongodb_client.db("covid19jhu").collection("UID_ISO_FIPS_LookUp_Table").aggregate(pipeline).toArray(async (err, result) => {
+          if (err) return res.status(500).send(err);
+    
+          redis_client.setex(key, 28800, JSON.stringify({ source: 'Redis cache', ...result[0] }));
+
+          res.send({ source: 'Mongodb', ...result[0] });
+        })
+      })
+    }
+  })
+
+
+})
+
+
 router.post('/graph', async (req, res, next) => {
   let selected_countries = req.body.countries;
   let selected_case = req.body.case;
@@ -191,9 +236,7 @@ router.post('/graph', async (req, res, next) => {
 
   // get the data from the cache
   redis_client.get(key, async (err, result) => {
-    if (err) {
-      res.status(500).json({ error: error });
-    }
+    if (err) res.status(500).send(err);
 
     // check data present in cache
     if (result) {
