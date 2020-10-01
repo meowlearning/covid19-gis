@@ -11,10 +11,8 @@ services:
     build: .
     expose:
         - 8393
-        - 3000
     ports:
         - "8393:8393"
-        - "3000:3000"
     links:
         - redis
     environment:
