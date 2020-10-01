@@ -27,7 +27,7 @@ router.get('/data', async function (req, res, next) {
   //get data from the cache
   redis_client.get(key, async (err, result) => {
     if (err) {
-      res.status(500).json({ error: error });
+      res.status(500).send(err);
     }
 
     //check data from the cache
@@ -38,6 +38,8 @@ router.get('/data', async function (req, res, next) {
 
       // get data from the database and store it in the cache
       mongodb_client.connect(async (err) => {
+        if (err) res.status(500).send(err);
+
         const covid19Database = mongodb_client.db("covid19");
         var globalAndUS = covid19Database.collection("global_and_us");
         var metadata = covid19Database.collection("metadata");
@@ -47,14 +49,14 @@ router.get('/data', async function (req, res, next) {
           .find()
           .toArray((err, docs) => {
             if (err) {
-              console.error(err);
+              res.status(500).send(err);
             }
             const lastDate = docs[0].last_date;
             globalAndUS
               .find({ date: { $eq: lastDate } })
               .toArray((err, docs) => {
                 if (err) {
-                  console.error(err);
+                  res.status(500).send(err);
                 }
                 // construct the response JSON file to be sent to the client
                 let resJSON = [];
@@ -92,8 +94,7 @@ router.get('/data', async function (req, res, next) {
 router.post('/graph', async (req, res, next) => {
   let selected_countries = req.body.countries;
   let selected_case = req.body.case;
-  let key = selected_countries.sort().join("_").concat('_', selected_case);
-  console.log(key);
+  let key = `${selected_countries.sort().join("_")}_${selected_case}`;
 
   const pipeline =
     [
