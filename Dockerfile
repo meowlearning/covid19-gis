@@ -20,7 +20,9 @@ COPY ./client/ /client/
 WORKDIR /client
 # install dependencies
 RUN npm i
-# Make port 3000 available to the world outside this container
-EXPOSE 3000
+# Build the statis files
+RUN npm run build
+# change WORKDIR back to server
+WORKDIR /server
 # Run the app when the container launches
-CMD ["concurrently", "npm:server", "npm:start"]
+CMD [ "npm", "start" ]

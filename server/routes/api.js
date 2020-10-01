@@ -64,12 +64,8 @@ router.get('/data', async function (req, res, next) {
 
 router.post('/graph', async (req, res, next) => {
   let selected_countries = req.body.countries;
-  console.log(selected_countries);
   let selected_case = req.body.case;
-  console.log(selected_case);
-  let key = selected_countries.sort().join("_").concat('_', selected_case);
-  console.log(key);
-  
+  let key = `${selected_countries.sort().join("_")}_${selected_case}`;  
   const pipeline =
     [
       {
