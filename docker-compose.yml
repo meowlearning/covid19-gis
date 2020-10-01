@@ -1,20 +1,34 @@
 version: "3"
 services:
-  server:
-    build: ./server
-    expose: 
-        - "8393"
+  redis:
+    image: redis:latest
+    container_name: cache
+    expose:
+      - 6379
+  web:
+    build: .
     ports:
-      - "8393:8393"
-    command: npm start
-  client:
-    build: ./client
-    expose: 
-        - "3000"
-    ports:
-      - "3000:3000"
+        - "8393:8393"
+        - "3000:3000"
     links:
-        - server
-    stdin_open: true
-    tty: true
-    command: npm start
+        - redis
+    environment:
+      - REDIS_URL=redis://cache
+  # server:
+  #   build: ./server
+  #   expose: 
+  #       - "8393"
+  #   ports:
+  #     - "8393:8393"
+  #   command: npm start
+  # client:
+  #   build: ./client
+  #   expose: 
+  #       - "3000"
+  #   ports:
+  #     - "3000:3000"
+  #   links:
+  #       - server
+  #   stdin_open: true
+  #   tty: true
+  #   command: npm start
