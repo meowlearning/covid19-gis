@@ -2,14 +2,15 @@ import React, { Component } from 'react';
 import HeatMap from './components/HeatMap';
 import Graph from './components/Graph';
 import StatisticSummary from './components/Statistic';
-import { Layout, Select, Popover } from 'antd';
+import CountryInfo from './components/CountryInfo';
+import { Layout, Select, Row, Col } from 'antd';
 import './App.css';
 const CountryOtions = require('./components/data/CountryCoord.json');
 const axios = require("axios").default;
 const { Header, Footer, Content, Sider } = Layout;
 const { Option } = Select;
 
-
+const fs = require('fs');
 
 class App extends Component {
 
@@ -24,18 +25,23 @@ class App extends Component {
         lng: 0,
         zoom: 0
       },
-      selectedCase: "Confirmed",
+    },
+    SelectedCase: "Confirmed",
+    countryOption: "Global",
+    options: {
+      case: ["Confirmed", "Deaths", "Recovered"]
     }
   }
 
   constructor() {
     super();
     this.handleCountryOptionChange = this.handleCountryOptionChange.bind(this);
+    this.handleSelectedCaseChange = this.handleSelectedCaseChange.bind(this);
   }
 
 
   componentDidMount() {
-   
+
     let data = sessionStorage.getItem("covid19-data");
     if (data) { // if data exist use the data
       data = JSON.parse(data);
@@ -87,6 +93,11 @@ class App extends Component {
     }
   }
 
+  handleSelectedCaseChange(value) {
+    this.setState({
+      SelectedCase: value
+    })
+  }
 
   handleCountryOptionChange(value) {
     // get the coord of the selected value
@@ -101,26 +112,20 @@ class App extends Component {
       }
     }
 
-    // store the data in the session  
-    sessionStorage.setItem("selected-country-option", JSON.stringify(value));
-    sessionStorage.setItem("selected-country-lat", JSON.stringify(lat));
-    sessionStorage.setItem("selected-country-lng", JSON.stringify(lng));
-    sessionStorage.setItem("selected-country-zoom", JSON.stringify(5));
-
     // set the state
     this.setState({
       selected: {
-        CountryOtions: value,
         map: {
           lat: lat,
           lng: lng,
           zoom: 5
         }
-      }
+      },
+      countryOption: value
     });
   }
 
- 
+
 
   render() {
     return (
@@ -129,27 +134,52 @@ class App extends Component {
         <Layout>
           <Sider>
             <h1 style={{ color: "white" }}>Country: </h1>
-            <Select defaultValue={this.state.selected.countryOption} style={{ width: 120 }} onChange={this.handleCountryOptionChange}>
+            <Select defaultValue={this.state.countryOption} style={{ width: 120 }} onChange={this.handleCountryOptionChange}>
               {CountryOtions.map((country) => {
                 return <Option value={country.name}>{country.name}</Option>
               })}
             </Select>
+            <h1 style={{ color: "white" }}>Case: </h1>
+            <Select defaultValue={this.state.SelectedCase} style={{ width: 120 }} onChange={this.handleSelectedCaseChange}>
+              {this.state.options.case.map((c) => {
+                return <Option value={c}>{c}</Option>
+              })}
+            </Select>
           </Sider>
-          <Content>
-            <HeatMap coordinates={this.state.data.map}
-              lat={this.state.selected.map.lat}
-              lng={this.state.selected.map.lng}
-              zoom={this.state.selected.map.zoom}
-              countryName={this.state.selected.countryOption}
-            />
-          </Content>
+          <Layout>
+            <Content>
+              <Row gutter={[8, 8]}>
+                <Col key="Heatmap" span={18}>
+                  <HeatMap coordinates={this.state.data.map}
+                    lat={this.state.selected.map.lat}
+                    lng={this.state.selected.map.lng}
+                    zoom={this.state.selected.map.zoom}
+                  />
+                </Col>
+                <Col key="Country-Info" span={6}>
+                  <CountryInfo 
+                    selectedCountry={this.state.countryOption}
+                  />
+                </Col>
+              </Row>
+              <Row gutter={[8, 8]}>
+                <Col key="Selected-Country-Graph" span={18}>
+                  <Graph 
+                    selectedCountry={this.state.countryOption} 
+                    selectedCase={this.state.SelectedCase} />
+                </Col>
+                <Col key="World-Info" span={6}>
+                  <StatisticSummary 
+                    data={this.state.data.statistic} />
+                </Col>
+              </Row>
+
+            </Content>
+            <Footer>
+
+            </Footer>
+          </Layout>
         </Layout>
-        <Footer>
-          <Graph selectedCountry={this.state.selected.countryOption} selectedCase={this.state.selected.selectedCase} />
-          <br />
-          <br />
-          <StatisticSummary data={this.state.data.statistic} />
-        </Footer>
       </Layout>
 
     );

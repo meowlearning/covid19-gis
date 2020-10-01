@@ -20,49 +20,73 @@ const redis_client = redis.createClient(redis_url);
 
 
 router.get('/data', async function (req, res, next) {
-  // get the data from the Database
-  mongodb_client.connect(async (err) => {
-    const covid19Database = mongodb_client.db("covid19");
-    var globalAndUS = covid19Database.collection("global_and_us");
-    var metadata = covid19Database.collection("metadata");
 
-    // get all the latest data
-    metadata
-      .find()
-      .toArray((err, docs) => {
-        if (err) {
-          console.error(err);
-        }
-        const lastDate = docs[0].last_date;
-        globalAndUS
-          .find({ date: { $eq: lastDate } })
+  const key = "world-data";
+
+
+  //get data from the cache
+  redis_client.get(key, async (err, result) => {
+    if (err) {
+      res.status(500).json({ error: error });
+    }
+
+    //check data from the cache
+    if (result) {
+      console.log(`${key} serve from Redis`);
+      res.status(200).json(JSON.parse(result));
+    } else {
+
+      // get data from the database and store it in the cache
+      mongodb_client.connect(async (err) => {
+        const covid19Database = mongodb_client.db("covid19");
+        var globalAndUS = covid19Database.collection("global_and_us");
+        var metadata = covid19Database.collection("metadata");
+
+        // get all the latest data
+        metadata
+          .find()
           .toArray((err, docs) => {
             if (err) {
               console.error(err);
             }
-            // construct the response JSON file to be sent to the client
-            let resJSON = [];
-            docs.map((obj) => {
-              resJSON.push({
-                // Construct the Object
-                data: {
-                  state: (obj.state !== undefined) ? obj.state : null,
-                  county: (obj.county !== undefined) ? obj.county : null,
-                  iso_code: obj.country_iso3,
-                  location: (obj.loc !== undefined) ? obj.loc : null,
-                  case: {
-                    confirmed: (obj.confirmed !== undefined) ? obj.confirmed : null,
-                    death: (obj.deaths !== undefined) ? obj.deaths : null,
-                    recovered: (obj.recovered !== undefined) ? obj.recovered : null
-                  }
+            const lastDate = docs[0].last_date;
+            globalAndUS
+              .find({ date: { $eq: lastDate } })
+              .toArray((err, docs) => {
+                if (err) {
+                  console.error(err);
                 }
-              });
-            })
+                // construct the response JSON file to be sent to the client
+                let resJSON = [];
+                docs.map((obj) => {
+                  resJSON.push({
+                    // Construct the Object
+                    data: {
+                      state: (obj.state !== undefined) ? obj.state : null,
+                      county: (obj.county !== undefined) ? obj.county : null,
+                      iso_code: obj.country_iso3,
+                      location: (obj.loc !== undefined) ? obj.loc : null,
+                      case: {
+                        confirmed: (obj.confirmed !== undefined) ? obj.confirmed : null,
+                        death: (obj.deaths !== undefined) ? obj.deaths : null,
+                        recovered: (obj.recovered !== undefined) ? obj.recovered : null
+                      }
+                    }
+                  });
+                })
 
-            res.send({ "data": resJSON })
+                //  store the result from mongodb to cache
+                redis_client.setex(key, 28800, JSON.stringify({ "data": resJSON }));
+
+                // send to the client
+                res.send({ "data": resJSON })
+              });
           });
       });
-  });
+
+    }
+  })
+
 });
 
 router.post('/graph', async (req, res, next) => {
@@ -70,7 +94,7 @@ router.post('/graph', async (req, res, next) => {
   let selected_case = req.body.case;
   let key = selected_countries.sort().join("_").concat('_', selected_case);
   console.log(key);
-  
+
   const pipeline =
     [
       {
@@ -166,10 +190,10 @@ router.post('/graph', async (req, res, next) => {
 
   // get the data from the cache
   redis_client.get(key, async (err, result) => {
-    if(err){                                                 
-      res.status(500).json({error: error});
+    if (err) {
+      res.status(500).json({ error: error });
     }
-    
+
     // check data present in cache
     if (result) {
       res.status(200).json(JSON.parse(result));
@@ -179,7 +203,7 @@ router.post('/graph', async (req, res, next) => {
         if (err) {
           return res.status(500).send(err);
         }
-    
+
         // send results
         mongodb_client.db("covid19").collection("countries_summary").aggregate(pipeline).toArray(async (err, result) => {
           if (err) {
@@ -187,13 +211,13 @@ router.post('/graph', async (req, res, next) => {
           }
 
           //  store the result from mongodb to cache
-          redis_client.setex(key, 28800, JSON.stringify({source: 'Redis cache', result: result}))
+          redis_client.setex(key, 28800, JSON.stringify({ source: 'Redis cache', result: result }))
 
           // send the result back to the client
-          res.send({ source: 'Mongodb', result: result});
+          res.send({ source: 'Mongodb', result: result });
         })
       })
-      
+
     }
   });
 
