@@ -27,7 +27,7 @@ class App extends Component {
       },
     },
     SelectedCase: "Confirmed",
-    countryOption: "Global",
+    SelectedCountry: "Global",
     options: {
       case: ["Confirmed", "Deaths", "Recovered"]
     }
@@ -37,8 +37,57 @@ class App extends Component {
     super();
     this.handleCountryOptionChange = this.handleCountryOptionChange.bind(this);
     this.handleSelectedCaseChange = this.handleSelectedCaseChange.bind(this);
+    this.getGISData = this.getGISData.bind(this);
   }
 
+
+  getGISData(selectedCase) {
+    axios.get('/api/gis')
+      .then(({ data }) => {
+        console.log(data)
+        let result = data.result;
+        let positions_and_intensity = [];
+        let confirmedCaseTotal = 0;
+        let deathCaseTotal = 0;
+        let recoveredCaseTotal = 0;
+        let activeCaseTotal = 0;
+
+        result.map((d) => {
+          positions_and_intensity.push({ lat: d.coords[1], lng: d.coords[0], intensity: d[selectedCase.toLowerCase()] })
+          confirmedCaseTotal += d.confirmed || 0;
+          deathCaseTotal += d.deaths || 0;
+          recoveredCaseTotal += d.recovered;
+          activeCaseTotal += d.active;
+        })
+
+
+
+        console.log(positions_and_intensity);
+
+        // construct the data for the Heatmap
+        let tempData = {
+          map: {
+            positions: positions_and_intensity,
+            options: {
+              radius: 20
+            }
+          },
+          statistic: {
+            confirmed: confirmedCaseTotal,
+            death: deathCaseTotal,
+            recovered: recoveredCaseTotal,
+            active: activeCaseTotal
+          }
+        }
+
+        this.setState({
+          data: tempData
+        })
+
+        // store data in session storage for later use
+        sessionStorage.setItem("covid19-data", JSON.stringify(tempData));
+      });
+  }
 
   componentDidMount() {
 
@@ -49,51 +98,12 @@ class App extends Component {
         data: data
       })
     } else { // if data is not exist in session storage fetch the data from the server
-      axios.get("/api/data")
-        .then(({ data }) => {
-          // construct the data
-          let positions = [];
-          let confirmedCaseTotal = 0;
-          let deathCaseTotal = 0;
-          let recoveredCaseTotal = 0;
-
-          data.data.map((d) => {
-            // data for Heatmap
-            if (d.data.location !== null) {
-              positions.push({ lat: d.data.location.coordinates[1], lng: d.data.location.coordinates[0] })
-            }
-            // data for statistic
-            confirmedCaseTotal += d.data.case.confirmed;
-            deathCaseTotal += d.data.case.death;
-            recoveredCaseTotal += d.data.case.recovered;
-          });
-
-          // construct the data for the Heatmap
-          let tempData = {
-            map: {
-              positions: positions,
-              options: {
-                radius: 20
-              }
-            },
-            statistic: {
-              confirmed: confirmedCaseTotal,
-              death: deathCaseTotal,
-              recovered: recoveredCaseTotal
-            }
-          }
-
-          this.setState({
-            data: tempData
-          })
-
-          // store data in session storage for later use
-          sessionStorage.setItem("covid19-data", JSON.stringify(tempData));
-        });
+      this.getGISData(this.state.SelectedCase);
     }
   }
 
   handleSelectedCaseChange(value) {
+    this.getGISData(value);
     this.setState({
       SelectedCase: value
     })
@@ -121,10 +131,9 @@ class App extends Component {
           zoom: 5
         }
       },
-      countryOption: value
+      SelectedCountry: value
     });
   }
-
 
 
   render() {
@@ -133,18 +142,28 @@ class App extends Component {
         <Header><h1 style={{ color: "white" }}>COVID-19</h1></Header>
         <Layout>
           <Sider>
-            <h1 style={{ color: "white" }}>Country: </h1>
-            <Select defaultValue={this.state.countryOption} style={{ width: 120 }} onChange={this.handleCountryOptionChange}>
-              {CountryOtions.map((country) => {
-                return <Option value={country.name}>{country.name}</Option>
-              })}
-            </Select>
-            <h1 style={{ color: "white" }}>Case: </h1>
-            <Select defaultValue={this.state.SelectedCase} style={{ width: 120 }} onChange={this.handleSelectedCaseChange}>
-              {this.state.options.case.map((c) => {
-                return <Option value={c}>{c}</Option>
-              })}
-            </Select>
+            <Row gutter={[8, 24]}>
+              <Col key="Country-Selection" span={6}>
+                <h1 style={{ color: "white" }}>Country: </h1>
+                <Select defaultValue={this.state.SelectedCountry} style={{ width: 150 }} onChange={this.handleCountryOptionChange}>
+                  {CountryOtions.map((country) => {
+                    return <Option value={country.name}>{country.name}</Option>
+                  })}
+                </Select>
+              </Col>
+            </Row>
+            <Row gutter={[8, 24]}>
+              <Col key="Case-Selection" span={6}>
+                <h1 style={{ color: "white" }}>Case: </h1>
+                <Select defaultValue={this.state.SelectedCase} style={{ width: 150 }} onChange={this.handleSelectedCaseChange}>
+                  {this.state.options.case.map((c) => {
+                    return <Option value={c}>{c}</Option>
+                  })}
+                </Select>
+              </Col>
+            </Row>
+
+
           </Sider>
           <Layout>
             <Content>
@@ -158,14 +177,14 @@ class App extends Component {
                 </Col>
                 <Col key="Country-Info" span={6}>
                   <CountryInfo
-                    selectedCountry={this.state.countryOption}
+                    selectedCountry={this.state.SelectedCountry}
                   />
                 </Col>
               </Row>
               <Row gutter={[8, 8]}>
                 <Col key="Selected-Country-Graph" span={18}>
                   <Graph
-                    selectedCountry={this.state.countryOption}
+                    selectedCountry={this.state.SelectedCountry}
                     selectedCase={this.state.SelectedCase} />
                 </Col>
                 <Col key="World-Info" span={6}>

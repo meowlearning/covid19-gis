@@ -283,7 +283,6 @@ router.get('/marker', async (req, res, next) => {
   })
 })
 
-
 router.post('/graph', async (req, res, next) => {
   let selected_countries = req.body.countries;
   let selected_case = req.body.case;
