@@ -400,8 +400,6 @@ router.post('/graph', async (req, res, next) => {
 
     }
   });
-
-
 });
 
 module.exports = router;
