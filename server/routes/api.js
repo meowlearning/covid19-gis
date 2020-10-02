@@ -248,10 +248,7 @@ router.get('/marker', async (req, res, next) => {
       }
     }, {
       '$project': {
-        'coords': {
-          'lat': '$Lat',
-          'lng': '$Long_'
-        }
+        'coords': ['$Lat', '$Long_']
       }
     }
   ]
