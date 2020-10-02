@@ -157,19 +157,19 @@ class App extends Component {
                   />
                 </Col>
                 <Col key="Country-Info" span={6}>
-                  <CountryInfo 
+                  <CountryInfo
                     selectedCountry={this.state.countryOption}
                   />
                 </Col>
               </Row>
               <Row gutter={[8, 8]}>
                 <Col key="Selected-Country-Graph" span={18}>
-                  <Graph 
-                    selectedCountry={this.state.countryOption} 
+                  <Graph
+                    selectedCountry={this.state.countryOption}
                     selectedCase={this.state.SelectedCase} />
                 </Col>
                 <Col key="World-Info" span={6}>
-                  <StatisticSummary 
+                  <StatisticSummary
                     data={this.state.data.statistic} />
                 </Col>
               </Row>
