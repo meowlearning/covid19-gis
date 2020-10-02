@@ -3,6 +3,8 @@ import { Card } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import Tooltip from "./Tooltip";
 
+const axios = require('axios');
+
 class CountryInfo extends Component {
     
     state = {
@@ -10,15 +12,18 @@ class CountryInfo extends Component {
     }
 
     componentDidMount(){
-        
+       
     }
 
     componentDidUpdate(prevProps){
-        if(prevProps.selectedCountry !== this.props.selectedCountry){
-
+        if(prevProps.selectedCountry != this.props.selectedCountry){
+            
         }
     }
 
+    getCountryInfos(countries){
+        
+    }
     
     render() {
         return (

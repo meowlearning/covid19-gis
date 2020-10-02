@@ -133,9 +133,8 @@ class Graph extends Component {
                 />
         }
         return (
-
             <Card title={`Selected Country Graph -- ${this.props.selectedCountry}`} extra={<Tooltip info={this.state.info}/>}>
-                 <div className="graph-container" style={{ height: "50vh", width: "100%" }}>
+                 <div className="graph-container" style={{ height: "60vh", width: "100%" }}>
                     {page}
                  </div>
             </Card>

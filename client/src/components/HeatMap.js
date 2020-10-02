@@ -18,6 +18,16 @@ const Marker = props => (
     </React.Fragment>
 )
 
+
+const Dot = props => (
+    <React.Fragment>
+        <span class="dot" style={{
+            height: props.radius / 10,
+            width: props.radius /10
+        }} />
+    </React.Fragment>
+)
+
 class HeatMap extends Component {
     state = {
         API_KEY: {
@@ -89,6 +99,7 @@ class HeatMap extends Component {
                             heatmapLibrary={true}
                             heatmap={this.props.coordinates}
                         >
+
                             {((this.props.lat !== 0) && (this.props.lng !== 0)) ? 
                                 <Marker 
                                 lat={this.props.lat}
