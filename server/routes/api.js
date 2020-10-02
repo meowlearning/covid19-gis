@@ -9,6 +9,7 @@ const redis = require('redis');
 // connect to the Database
 const DATABASE_URL = "mongodb+srv://readonly:readonly@covid-19.hip2i.mongodb.net/covid19";
 const { MongoClient } = require("mongodb");
+const e = require('express');
 const mongodb_client = new MongoClient(DATABASE_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -91,6 +92,179 @@ router.get('/data', async function (req, res, next) {
 
 });
 
+router.get('/gis', async (req, res, next) => {
+  let key = "world_gis";
+
+  let pipeline = [
+    {
+      '$group': {
+        '_id': {
+          'country': '$country',
+          'state': '$state',
+          'county': '$county',
+          'coords': '$loc.coordinates'
+        },
+        'data': {
+          '$push': {
+            'confirmed': '$confirmed',
+            'deaths': '$deaths',
+            'recovered': {
+              '$ifNull': [
+                '$recovered', 0
+              ]
+            },
+            'population': '$population'
+          }
+        }
+      }
+    }, {
+      '$project': {
+        'data': {
+          '$map': {
+            'input': {
+              '$range': [
+                0, {
+                  '$size': '$data'
+                }
+              ]
+            },
+            'as': 'this',
+            'in': {
+              '$mergeObjects': [
+                {
+                  'confirmed': {
+                    '$arrayElemAt': [
+                      '$data.confirmed', '$$this'
+                    ]
+                  },
+                  'deaths': {
+                    '$arrayElemAt': [
+                      '$data.deaths', '$$this'
+                    ]
+                  },
+                  'recovered': {
+                    '$arrayElemAt': [
+                      '$data.recovered', '$$this'
+                    ]
+                  },
+                  'active': {
+                    '$subtract': [
+                      {
+                        '$subtract': [
+                          {
+                            '$arrayElemAt': [
+                              '$data.confirmed', '$$this'
+                            ]
+                          }, {
+                            '$arrayElemAt': [
+                              '$data.deaths', '$$this'
+                            ]
+                          }
+                        ]
+                      }, {
+                        '$arrayElemAt': [
+                          '$data.recovered', '$$this'
+                        ]
+                      }
+                    ]
+                  },
+                  'incidence': {
+                    '$divide': [
+                      {
+                        '$multiply': [
+                          {
+                            '$subtract': [
+                              {
+                                '$arrayElemAt': [
+                                  '$data.confirmed', '$$this'
+                                ]
+                              }, {
+                                '$arrayElemAt': [
+                                  '$data.confirmed', {
+                                    '$max': [
+                                      0, {
+                                        '$subtract': [
+                                          '$$this', 365
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }, 100000
+                        ]
+                      }, {
+                        '$arrayElemAt': [
+                          '$data.population', '$$this'
+                        ]
+                      }
+                    ]
+                  }
+                }, null
+              ]
+            }
+          }
+        }
+      }
+    }, {
+      '$project': {
+        'confirmed': {
+          '$arrayElemAt': [
+            '$data.confirmed', -1
+          ]
+        },
+        'deaths': {
+          '$arrayElemAt': [
+            '$data.deaths', -1
+          ]
+        },
+        'recovered': {
+          '$arrayElemAt': [
+            '$data.recovered', -1
+          ]
+        },
+        'active': {
+          '$arrayElemAt': [
+            '$data.active', -1
+          ]
+        },
+        'incidence': {
+          '$arrayElemAt': [
+            '$data.incidence', -1
+          ]
+        }
+      }
+    }
+  ]
+
+  //  get the data from cache
+  redis_client.get(key, async (err, result) => {
+    if (err) res.status(500).send(err);
+
+    // check the data present in cache
+    if (result) {
+      res.status(200).json(JSON.parse(result));
+    } else {
+      //  get data from mongodb and store in cache
+      mongodb_client.connect(async (err) => {
+        if (err) return res.status(500).send(err);
+
+        // send results
+        mongodb_client.db("covid19").collection("global_and_us").aggregate(pipeline, { allowDiskUse: true }).toArray(async (err, result) => {
+          if (err) return res.status(500).send(err);
+
+          //  store the result from mongodb to cache
+          redis_client.setex(key, 28800, JSON.stringify({ source: "Redis Cache", result: result }));
+
+          // send the result back to client
+          res.send({ source: "Mongodb", result: result });
+        })
+      })
+    }
+  })
+
+})
 
 router.get('/marker', async (req, res, next) => {
   let country = req.query.country;
@@ -103,7 +277,6 @@ router.get('/marker', async (req, res, next) => {
       }
     }, {
       '$project': {
-        'country': '$Country_Region',
         'coords': {
           'lat': '$Lat',
           'lng': '$Long_'
@@ -117,20 +290,20 @@ router.get('/marker', async (req, res, next) => {
     if (err) res.status(500).send(err);
 
     // check if data present in cache
-    else if(result) {
+    else if (result) {
       res.status(200).json(JSON.parse(result));
     } else {
       // get data from mongodb and store in cache
       mongodb_client.connect(async (err) => {
         if (err) return res.status(500).send(err);
-    
+
         // get result from mongodb
         mongodb_client.db("covid19jhu").collection("UID_ISO_FIPS_LookUp_Table").aggregate(pipeline).toArray(async (err, result) => {
           if (err) return res.status(500).send(err);
-    
+
           // store result in redis cache
           redis_client.setex(key, 28800, JSON.stringify({ source: 'Redis cache', ...result[0] }));
-
+          
           // send the result back to client
           res.send({ source: 'Mongodb', ...result[0] });
         })
@@ -145,98 +318,86 @@ router.post('/graph', async (req, res, next) => {
   let selected_case = req.body.case;
   let key = `${selected_countries.sort().join("_")}_${selected_case}`;
 
-  const pipeline =
-    [
-      {
-        '$sort': {
-          'country': 1,
-          'date': 1
+  const pipeline = [
+    {
+      '$sort': {
+        'date': 1
+      }
+    }, {
+      '$addFields': {
+        'countries': selected_countries,
+        'case': `$${selected_case}`
+      }
+    }, {
+      '$addFields': {
+        'is_country': {
+          '$in': [
+            '$country', '$countries'
+          ]
         }
-      }, {
-        '$addFields': {
-          'countries': selected_countries,
-          'case': `$${selected_case}`
-        }
-      }, {
-        '$addFields': {
-          'is_country': {
-            '$in': [
-              '$country', '$countries'
-            ]
+      }
+    }, {
+      '$match': {
+        'is_country': true
+      }
+    }, {
+      '$group': {
+        '_id': '$country',
+        'data': {
+          '$push': {
+            'case': '$case',
+            'date': '$date'
           }
         }
-      }, {
-        '$match': {
-          'is_country': true
-        }
-      }, {
-        '$group': {
-          '_id': '$country',
-          'data': {
-            '$push': {
-              'case': '$case',
-              'date': '$date'
-            }
-          }
-        }
-      }, {
-        '$project': {
-          'data': {
-            '$map': {
-              'input': {
-                '$range': [
-                  7, {
-                    '$size': '$data'
-                  }
-                ]
-              },
-              'as': 'this',
-              'in': {
-                '$mergeObjects': [
-                  {
-                    '$arrayElemAt': [
-                      '$data', '$$this'
+      }
+    }, {
+      '$project': {
+        'data': {
+          '$map': {
+            'input': {
+              '$range': [
+                0, {
+                  '$size': '$data'
+                }
+              ]
+            },
+            'as': 'this',
+            'in': {
+              '$mergeObjects': [
+                {
+                  '$arrayElemAt': [
+                    '$data', '$$this'
+                  ]
+                }, {
+                  'case_weekly': {
+                    '$subtract': [
+                      {
+                        '$arrayElemAt': [
+                          '$data.case', '$$this'
+                        ]
+                      }, {
+                        '$arrayElemAt': [
+                          '$data.case', {
+                            '$max': [
+                              0, {
+                                '$subtract': [
+                                  '$$this', 7
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
-                  }, {
-                    'weekly': {
-                      '$arrayElemAt': [
-                        '$data', {
-                          '$subtract': [
-                            '$$this', 7
-                          ]
-                        }
-                      ]
-                    }
                   }
-                ]
-              }
-            }
-          }
-        }
-      }, {
-        '$project': {
-          'data': {
-            '$map': {
-              'input': '$data',
-              'as': 'this',
-              'in': {
-                '$mergeObjects': [
-                  {
-                    'case': '$$this.case',
-                    'case_weekly': {
-                      '$subtract': [
-                        '$$this.case', '$$this.weekly.case'
-                      ]
-                    },
-                    'date': '$$this.date'
-                  }, null
-                ]
-              }
+                }
+              ]
             }
           }
         }
       }
-    ]
+    }
+  ]
 
   // get the data from the cache
   redis_client.get(key, async (err, result) => {
