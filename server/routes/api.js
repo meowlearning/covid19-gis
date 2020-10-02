@@ -92,6 +92,38 @@ router.get('/data', async function (req, res, next) {
 
 });
 
+router.get('/countries', async (req, res, next) => {
+  let key = 'countries';
+  
+  //  get data from cache
+  redis_client.get(key, async (err, result) => {
+    if (err) return res.status(500).send(err);
+
+    // check if data present from cache
+    if (result) {
+      res.status(200).json(JSON.parse(result));
+    } else {
+      // get data from mongodb and store in cache
+      mongodb_client.connect(async (err) => {
+        if (err) return res.status(500).send(err);
+
+        // get the countries from mongodb
+        mongodb_client.db("covid19").collection("metadata").find().toArray(async (err, docs) => {
+          if (err) return res.status(500).send(err);
+
+          // get the coutries
+          let countries = docs[0].countries;
+
+          // store to redis
+          redis_client.setex(key, 28800, JSON.stringify({source: "Redis Cache", countries: countries}));
+
+          // send the result back to client
+          res.send({source: "Mongodb", countries: countries});
+        })
+      })
+    }
+  })
+})
 router.get('/gis', async (req, res, next) => {
   let key = "world_gis";
 
@@ -237,7 +269,7 @@ router.get('/gis', async (req, res, next) => {
 
 })
 
-router.get('/marker', async (req, res, next) => {
+router.get('/loc', async (req, res, next) => {
   let country = req.query.country;
   let key = `marker_${country}`;
   let pipeline = [
@@ -248,10 +280,7 @@ router.get('/marker', async (req, res, next) => {
       }
     }, {
       '$project': {
-        'coords': {
-          'lat': '$Lat',
-          'lng': '$Long_'
-        }
+        'coords': ['$Lat', '$Long_']
       }
     }
   ]
@@ -399,8 +428,6 @@ router.post('/graph', async (req, res, next) => {
 
     }
   });
-
-
 });
 
 module.exports = router;
