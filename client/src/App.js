@@ -19,6 +19,7 @@ class App extends Component {
       statistic: null,
       map: null
     },
+    countries: [],
     selected: {
       map: {
         lat: 0,
@@ -91,6 +92,27 @@ class App extends Component {
           sessionStorage.setItem("covid19-data", JSON.stringify(tempData));
         });
     }
+
+    // get countries
+    let countries = sessionStorage.getItem("countries");
+    if (countries) {
+      countries = JSON.parse(countries);
+      this.setState({
+        countries: countries
+      })
+    } else {
+      axios.get('/api/countries')
+        .then(async ({ data }) => {
+
+          // set countries
+          this.setState({
+            countries: data.countries
+          })
+
+          // store data in session storage for later use
+          sessionStorage.setItem("countries", JSON.stringify(data.countries))
+        });
+    }
   }
 
   handleSelectedCaseChange(value) {
@@ -100,29 +122,44 @@ class App extends Component {
   }
 
   handleCountryOptionChange(value) {
-    // get the coord of the selected value
-    let lng = 0;
-    let lat = 0;
+    // // get the coord of the selected value
+    // let lat = 0;
+    // let lng = 0;
 
-    for (let i = 0; i < CountryOtions.length; i++) {
-      if (CountryOtions[i].name === value) {
-        lng = CountryOtions[i].latlng[1]
-        lat = CountryOtions[i].latlng[0]
-        break;
-      }
-    }
+    axios.get(`/api/loc?country=${value}`)
+      .then(async ({ data }) => {
+        // set the state
+        this.setState({
+          selected: {
+            map: {
+              lat: data.coords[0],
+              lng: data.coords[1],
+              zoom: 5,
+            }
+          },
+          countryOption: value
+        })
+      })
 
-    // set the state
-    this.setState({
-      selected: {
-        map: {
-          lat: lat,
-          lng: lng,
-          zoom: 5
-        }
-      },
-      countryOption: value
-    });
+    // for (let i = 0; i < CountryOtions.length; i++) {
+    //   if (CountryOtions[i].name === value) {
+    //     lng = CountryOtions[i].latlng[1]
+    //     lat = CountryOtions[i].latlng[0]
+    //     break;
+    //   }
+    // }
+
+    // // set the state
+    // this.setState({
+    //   selected: {
+    //     map: {
+    //       lat: lat,
+    //       lng: lng,
+    //       zoom: 5
+    //     }
+    //   },
+    //   countryOption: value
+    // });
   }
 
 
@@ -135,8 +172,8 @@ class App extends Component {
           <Sider>
             <h1 style={{ color: "white" }}>Country: </h1>
             <Select defaultValue={this.state.countryOption} style={{ width: 120 }} onChange={this.handleCountryOptionChange}>
-              {CountryOtions.map((country) => {
-                return <Option value={country.name}>{country.name}</Option>
+              {this.state.countries.map((country) => {
+                return <Option value={country}>{country}</Option>
               })}
             </Select>
             <h1 style={{ color: "white" }}>Case: </h1>
@@ -157,19 +194,19 @@ class App extends Component {
                   />
                 </Col>
                 <Col key="Country-Info" span={6}>
-                  <CountryInfo 
+                  <CountryInfo
                     selectedCountry={this.state.countryOption}
                   />
                 </Col>
               </Row>
               <Row gutter={[8, 8]}>
                 <Col key="Selected-Country-Graph" span={18}>
-                  <Graph 
-                    selectedCountry={this.state.countryOption} 
+                  <Graph
+                    selectedCountry={this.state.countryOption}
                     selectedCase={this.state.SelectedCase} />
                 </Col>
                 <Col key="World-Info" span={6}>
-                  <StatisticSummary 
+                  <StatisticSummary
                     data={this.state.data.statistic} />
                 </Col>
               </Row>
