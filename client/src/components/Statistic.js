@@ -38,7 +38,7 @@ class StatisticSummary extends Component {
                         "RecoveredColor": "hsl(92, 100%, 26%)"
                     }, {
                         "case": "Deaths",
-                        "Deaths": this.props.data.death,
+                        "Deaths": this.props.data.deaths,
                         "DeathsColor": "hsl(355, 83%, 44%)"
                     }]
                 }
@@ -75,8 +75,8 @@ class StatisticSummary extends Component {
                                 <Col key="Confirmed" span={12}>
                                     <Statistic title="Confirmed" value={this.props.data.confirmed} valueStyle={{ color: "#8DD3C7" }} />
                                 </Col>
-                                <Col key="Death" span={12}>
-                                    <Statistic title="Death" value={this.props.data.death} valueStyle={{ color: '#FDF5B3' }} />
+                                <Col key="Deaths" span={12}>
+                                    <Statistic title="Deaths" value={this.props.data.deaths} valueStyle={{ color: '#FDF5B3' }} />
                                 </Col>
                             </Row>
                             <Row gutter={[48, 48]}>

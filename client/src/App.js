@@ -15,10 +15,8 @@ const tinygradient = require('tinygradient');
 class App extends Component {
 
   state = {
-    data: {
-      statistic: null,
-      map: null
-    },
+    statistic: null,
+    map: null,
     countries: [],
     selected: {
       map: {
@@ -39,6 +37,8 @@ class App extends Component {
     this.handleCountryOptionChange = this.handleCountryOptionChange.bind(this);
     this.handleSelectedCaseChange = this.handleSelectedCaseChange.bind(this);
     this.getGISData = this.getGISData.bind(this);
+    this.getGlobalInfo = this.getGlobalInfo.bind(this);
+    this.getCountries = this.getCountries.bind(this);
   }
 
 
@@ -70,30 +70,36 @@ class App extends Component {
 
     colors.unshift("rgba(0, 0, 0, 0)");
 
+    // get gis data and update state
     axios.get('/api/gis')
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         console.log(data)
         let result = data.result;
         let positions_and_intensity = [];
-        let confirmedCaseTotal = 0;
-        let deathCaseTotal = 0;
-        let recoveredCaseTotal = 0;
-        let activeCaseTotal = 0;
+        // let confirmedCaseTotal = 0;
+        // let deathCaseTotal = 0;
+        // let recoveredCaseTotal = 0;
+        // let activeCaseTotal = 0;
 
-        result.map((d) => {
-          positions_and_intensity.push({ lat: d.coords[1], lng: d.coords[0], weight: d[selectedCase.toLowerCase()] || 0 })
-          confirmedCaseTotal += d.confirmed || 0;
-          deathCaseTotal += d.deaths || 0;
-          recoveredCaseTotal += d.recovered;
-          activeCaseTotal += d.active;
-        })
+        positions_and_intensity = result.map((d) => (
+          {
+            lat: d.coords[1],
+            lng: d.coords[0],
+            weight: d[selectedCase.toLowerCase()] || 0
+          }
+          // confirmedCaseTotal += d.confirmed || 0;
+          // deathCaseTotal += d.deaths || 0;
+          // recoveredCaseTotal += d.recovered;
+          // activeCaseTotal += d.active;
+        ))
 
 
 
         console.log(positions_and_intensity);
 
         // construct the data for the Heatmap
-        let tempData = {
+
+        this.setState({
           map: {
             positions: positions_and_intensity,
             options: {
@@ -101,35 +107,62 @@ class App extends Component {
               maxIntensity: 10000,
               gradient: colors,
             }
-          },
-          statistic: {
-            confirmed: confirmedCaseTotal,
-            death: deathCaseTotal,
-            recovered: recoveredCaseTotal,
-            active: activeCaseTotal
           }
+        })
+      })
+      .catch(err => console.log(err))
+  }
+
+  getGlobalInfo() {
+    axios.get('/api/globalinfo')
+      .then(async ({ data }) => {
+        // construct the data for the statistic
+        let statistic = {
+          confirmed: data.confirmed,
+          deaths: data.deaths,
+          recovered: data.recovered,
+          active: data.active,
+          incidence: data.incidence
         }
 
         this.setState({
-          data: tempData
+          statistic: statistic
         })
 
         // store data in session storage for later use
-        sessionStorage.setItem("covid19-data", JSON.stringify(tempData));
-      });
+        sessionStorage.setItem("covid19-statistic", JSON.stringify(statistic));
+      })
+      .catch(err => console.log(err))
+  }
+
+  getCountries() {
+    axios.get('/api/countries')
+      .then(async ({ data }) => {
+
+        // set countries
+        this.setState({
+          countries: data.countries
+        })
+
+        // store data in session storage for later use
+        sessionStorage.setItem("countries", JSON.stringify(data.countries))
+      })
+      .catch(err => console.log(err))
   }
 
   componentDidMount() {
 
-    let data = sessionStorage.getItem("covid19-data");
-    if (data) { // if data exist use the data
-      data = JSON.parse(data);
+    let statistic = sessionStorage.getItem("covid19-statistic");
+    if (statistic) { // if data statistic exist use the data
+      statistic = JSON.parse(statistic);
       this.setState({
-        data: data
+        statistic: statistic
       })
-    } else { // if data is not exist in session storage fetch the data from the server
-      this.getGISData(this.state.SelectedCase);
+    } else { // if data statistic does not exist in session storage fetch the data from the server
+      this.getGlobalInfo();
     }
+
+    this.getGISData(this.state.SelectedCase);
 
     // get countries
     let countries = sessionStorage.getItem("countries");
@@ -139,17 +172,7 @@ class App extends Component {
         countries: countries
       })
     } else {
-      axios.get('/api/countries')
-        .then(async ({ data }) => {
-
-          // set countries
-          this.setState({
-            countries: data.countries
-          })
-
-          // store data in session storage for later use
-          sessionStorage.setItem("countries", JSON.stringify(data.countries))
-        });
+      this.getCountries();
     }
   }
 
@@ -179,6 +202,7 @@ class App extends Component {
           countryOption: value
         })
       })
+      .catch(err => console.log(err))
 
     // for (let i = 0; i < CountryOtions.length; i++) {
     //   if (CountryOtions[i].name === value) {
@@ -235,7 +259,7 @@ class App extends Component {
             <Content>
               <Row gutter={[8, 8]}>
                 <Col key="Heatmap" span={18}>
-                  <HeatMap coordinates={this.state.data.map}
+                  <HeatMap coordinates={this.state.map}
                     lat={this.state.selected.map.lat}
                     lng={this.state.selected.map.lng}
                     zoom={this.state.selected.map.zoom}
@@ -255,7 +279,7 @@ class App extends Component {
                 </Col>
                 <Col key="World-Info" span={6}>
                   <StatisticSummary
-                    data={this.state.data.statistic} />
+                    data={this.state.statistic} />
                 </Col>
               </Row>
 
