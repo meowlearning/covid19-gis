@@ -9,8 +9,8 @@ const CountryOtions = require('./components/data/CountryCoord.json');
 const axios = require("axios").default;
 const { Header, Footer, Content, Sider } = Layout;
 const { Option } = Select;
-
 const fs = require('fs');
+const tinygradient = require('tinygradient');
 
 class App extends Component {
 
@@ -43,6 +43,33 @@ class App extends Component {
 
 
   getGISData(selectedCase) {
+    let colors = null;
+    let gradient = null;
+    if (selectedCase == "Confirmed") {
+      gradient = tinygradient([
+        "#00ffef",
+        "#0480f7",
+        "#0800ff",
+      ]);
+      colors = gradient.rgb(20).map(t => t.toHexString());
+    } else if (selectedCase == "Deaths") {
+      gradient = tinygradient([
+        "#caff00",
+        "#f78204",
+        "#ff0000",
+      ])
+      colors = gradient.rgb(20).map(t => t.toHexString());
+    } else if (selectedCase == "Recovered") {
+      gradient = tinygradient([
+        "#e6ff70",
+        "#75ff70",
+        "#00ff6f"
+      ])
+      colors = gradient.rgb(20).map(t => t.toHexString());
+    }
+
+    colors.unshift("rgba(0, 0, 0, 0)");
+
     axios.get('/api/gis')
       .then(({ data }) => {
         console.log(data)
@@ -54,7 +81,7 @@ class App extends Component {
         let activeCaseTotal = 0;
 
         result.map((d) => {
-          positions_and_intensity.push({ lat: d.coords[1], lng: d.coords[0], intensity: d[selectedCase.toLowerCase()] })
+          positions_and_intensity.push({ lat: d.coords[1], lng: d.coords[0], weight: d[selectedCase.toLowerCase()] || 0 })
           confirmedCaseTotal += d.confirmed || 0;
           deathCaseTotal += d.deaths || 0;
           recoveredCaseTotal += d.recovered;
@@ -70,7 +97,9 @@ class App extends Component {
           map: {
             positions: positions_and_intensity,
             options: {
-              radius: 20
+              radius: 15,
+              maxIntensity: 10000,
+              gradient: colors,
             }
           },
           statistic: {
