@@ -76,10 +76,6 @@ class App extends Component {
         console.log(data)
         let result = data.result;
         let positions_and_intensity = [];
-        // let confirmedCaseTotal = 0;
-        // let deathCaseTotal = 0;
-        // let recoveredCaseTotal = 0;
-        // let activeCaseTotal = 0;
 
         positions_and_intensity = result.map((d) => (
           {
@@ -87,18 +83,11 @@ class App extends Component {
             lng: d.coords[0],
             weight: d[selectedCase.toLowerCase()] || 0
           }
-          // confirmedCaseTotal += d.confirmed || 0;
-          // deathCaseTotal += d.deaths || 0;
-          // recoveredCaseTotal += d.recovered;
-          // activeCaseTotal += d.active;
         ))
-
-
 
         console.log(positions_and_intensity);
 
         // construct the data for the Heatmap
-
         this.setState({
           map: {
             positions: positions_and_intensity,
@@ -184,26 +173,6 @@ class App extends Component {
   }
 
   handleCountryOptionChange(value) {
-    // // get the coord of the selected value
-    // let lat = 0;
-    // let lng = 0;
-
-    // axios.get(`/api/loc?country=${value}`)
-    //   .then(async ({ data }) => {
-    //     // set the state
-    //     this.setState({
-    //       selected: {
-    //         map: {
-    //           lat: data.coords[0],
-    //           lng: data.coords[1],
-    //           zoom: 5,
-    //         }
-    //       },
-    //       countryOption: value
-    //     })
-    //   })
-    //   .catch(err => console.log(err))
-
       const data = this.state.countries.find(({ _id }) => _id.country == value);
 
       this.setState({
@@ -216,26 +185,6 @@ class App extends Component {
         },
         countryOption: value
       })
-
-    // for (let i = 0; i < CountryOtions.length; i++) {
-    //   if (CountryOtions[i].name === value) {
-    //     lng = CountryOtions[i].latlng[1]
-    //     lat = CountryOtions[i].latlng[0]
-    //     break;
-    //   }
-    // }
-
-    // // set the state
-    // this.setState({
-    //   selected: {
-    //     map: {
-    //       lat: lat,
-    //       lng: lng,
-    //       zoom: 5
-    //     }
-    //   },
-    //   countryOption: value
-    // });
   }
 
 
