@@ -93,10 +93,81 @@ router.get('/countries', async (req, res, next) => {
       redis_client.setex(key, 28800, JSON.stringify({ source: "Redis Cache", countries: countries }))
 
       // send the result back to client
-      res.send({ source: "Mongodb", countries: countries})
+      res.send({ source: "Mongodb", countries: countries })
     })
     .catch(err => console.log(err))
 });
+
+/**
+ * Get list of requested regions. If country is undefined,
+ * return list of countries with their locations. 
+ * If country is defined and state is undefined,
+ * return list of states of requested countries.
+ * if state is defined, return list of requested counties of
+ * requested country and state
+ */
+router.get('/regions', async (req, res, next) => {
+  const covid19jhu = req.app.mongodb.db("covid19jhu");
+  let country = req.query.country;
+  let state = req.query.state;
+  let key = `regions_${country}_${state}`;
+
+  let pipeline = [
+    {
+      '$match': {}
+    }, {
+      '$group': {
+        '_id': {
+          'country': '$Country_Region'
+        }, 
+        'lat': {
+          '$first': '$Lat'
+        }, 
+        'lng': {
+          '$first': '$Long_'
+        }
+      }
+    }, {
+      '$match': {}
+    }
+  ]
+
+  if (country != undefined) {
+    // if countries is defined return list of states without the country itself
+    pipeline[0]['$match']['Country_Region'] = country;
+    pipeline[1]['$group']['_id']['state'] = '$Province_State';
+    pipeline[2]['$match']['_id.state'] = {};
+    pipeline[2]['$match']['_id.state']['$nin'] = [""];
+
+    // if state is defined return list of counties, without country and states itself
+    if (state != undefined) {
+      pipeline[0]['$match']['Province_State'] = state;
+      pipeline[1]['$group']['_id']['county'] = '$Admin2';
+      pipeline[2]['$match']['_id.county'] = {};
+      pipeline[2]['$match']['_id.county']['$nin'] = [""];
+    }
+  }
+
+  // try to get data from redis
+  redis_get(key)
+    .then(async (result) => {
+      if (result) {
+        res.status(200).json(JSON.parse(result));
+        throw `Caught '${key}' in cache`;
+      } else {
+        // return data from mongodb
+        return covid19jhu.collection("UID_ISO_FIPS_LookUp_Table").aggregate(pipeline).toArray()
+      }
+    })
+    .then(async (result) => {
+      // store the result from mongodb to redis
+      redis_client.setex(key, 28800, JSON.stringify({ source: "Redis Cache", result: result }))
+
+      // send the result back to client
+      return res.send({ source: "Mongodb", result: result });
+    })
+    .catch(err => console.log(err))
+})
 
 router.get('/gis', async (req, res, next) => {
   let key = "world_gis";
@@ -264,7 +335,7 @@ router.get('/loc', async (req, res, next) => {
   redis_get(key)
     .then(async (result) => {
       if (result) {
-        res.status(200).send(result);
+        res.status(200).json(JSON.parse(result));
         throw `Caught '${key}' in cache`
       } else {
         // get data from mongodb

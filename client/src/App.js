@@ -136,16 +136,16 @@ class App extends Component {
   }
 
   getCountries() {
-    axios.get('/api/countries')
+    axios.get('/api/regions')
       .then(async ({ data }) => {
 
         // set countries
         this.setState({
-          countries: data.countries
+          countries: data.result
         })
 
         // store data in session storage for later use
-        sessionStorage.setItem("countries", JSON.stringify(data.countries))
+        sessionStorage.setItem("countries", JSON.stringify(data.result))
       })
       .catch(err => console.log(err))
   }
@@ -188,21 +188,34 @@ class App extends Component {
     // let lat = 0;
     // let lng = 0;
 
-    axios.get(`/api/loc?country=${value}`)
-      .then(async ({ data }) => {
-        // set the state
-        this.setState({
-          selected: {
-            map: {
-              lat: data.coords[0],
-              lng: data.coords[1],
-              zoom: 5,
-            }
-          },
-          countryOption: value
-        })
+    // axios.get(`/api/loc?country=${value}`)
+    //   .then(async ({ data }) => {
+    //     // set the state
+    //     this.setState({
+    //       selected: {
+    //         map: {
+    //           lat: data.coords[0],
+    //           lng: data.coords[1],
+    //           zoom: 5,
+    //         }
+    //       },
+    //       countryOption: value
+    //     })
+    //   })
+    //   .catch(err => console.log(err))
+
+      const data = this.state.countries.find(({ _id }) => _id.country == value);
+
+      this.setState({
+        selected: {
+          map: {
+            lat: data.lat,
+            lng: data.lng,
+            zoom: 5,
+          }
+        },
+        countryOption: value
       })
-      .catch(err => console.log(err))
 
     // for (let i = 0; i < CountryOtions.length; i++) {
     //   if (CountryOtions[i].name === value) {
@@ -237,7 +250,7 @@ class App extends Component {
                 <h1 style={{ color: "white" }}>Country: </h1>
                 <Select defaultValue={this.state.SelectedCountry} style={{ width: 150 }} onChange={this.handleCountryOptionChange}>
                   {this.state.countries.map((country) => {
-                    return <Option value={country}>{country}</Option>
+                    return <Option value={country._id.country}>{country._id.country}</Option>
                   })}
                 </Select>
               </Col>
