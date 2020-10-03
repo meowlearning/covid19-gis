@@ -241,12 +241,15 @@ router.get('/gis', async (req, res, next) => {
 router.get('/loc', async (req, res, next) => {
   const covid19jhu = req.app.mongodb.db("covid19jhu");
   let country = req.query.country;
-  let key = `marker_${country}`;
+  let state = req.query.state;
+  let county = req.query.county;
+  let key = `marker_${country}_${state}_${county}`;
   let pipeline = [
     {
       '$match': {
         'Country_Region': country,
-        'Province_State': ''
+        'Province_State': "",
+        'Admin2': "",
       }
     }, {
       '$project': {
@@ -254,6 +257,15 @@ router.get('/loc', async (req, res, next) => {
       }
     }
   ]
+
+  if (county == undefined) {
+    if (state != undefined) {
+      pipeline[0]['$match']['Province_State'] = state;
+    }
+  } else {
+    pipeline[0]['$match']['Province_State'] = state;
+    pipeline[0]['$match']['Admin2'] = county;
+  }
 
   // get data from the cache
   redis_client.get(key, async (err, result) => {
@@ -388,5 +400,198 @@ router.post('/graph', async (req, res, next) => {
   });
 });
 
+router.get('/graphInfo', async (req, res, next) => {
+  const covid19 = req.app.mongodb.db("covid19");
+  let country = req.query.country;
+  let state = req.query.state;
+  let county = req.query.county;
+  let key = `graphInfo_${country}`;
+
+  const pipeline = [
+    {
+      '$match': {
+        'country': country, 
+      }
+    }, {
+      '$lookup': {
+        'from': 'global_and_us', 
+        'let': {
+          'cur_country': '$country', 
+          'cur_state': '$state', 
+          'cur_county': '$county', 
+          'weekly_date': {
+            '$subtract': [
+              '$date', 86400 * 1000 * 7
+            ]
+          }, 
+          'yearly_date': {
+            '$subtract': [
+              '$date', 86400 * 1000 * 365
+            ]
+          }
+        }, 
+        'pipeline': [
+          {
+            '$match': {
+              '$expr': {
+                '$and': [
+                  {
+                    '$eq': [
+                      '$country', '$$cur_country'
+                    ]
+                  }, {
+                    '$eq': [
+                      '$state', '$$cur_state'
+                    ]
+                  }, {
+                    '$eq': [
+                      '$county', '$$cur_county'
+                    ]
+                  }, {
+                    '$or': [
+                      {
+                        '$eq': [
+                          '$date', '$$weekly_date'
+                        ]
+                      }, {
+                        '$eq': [
+                          '$date', '$$yearly_date'
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ], 
+        'as': 'result'
+      }
+    }, {
+      '$project': {
+        'country': 1, 
+        'state': 1, 
+        'county': 1, 
+        'coords': '$loc.coordinates', 
+        'confirmed': 1, 
+        'recovered': {
+          '$ifNull': [
+            '$recovered', 0
+          ]
+        }, 
+        'deaths': 1, 
+        'weekly_confirmed': {
+          '$subtract': [
+            '$confirmed', {
+              '$ifNull': [
+                {
+                  '$arrayElemAt': [
+                    '$result.confirmed', 0
+                  ]
+                }, 0
+              ]
+            }
+          ]
+        }, 
+        'yearly_confirmed': {
+          '$subtract': [
+            '$confirmed', {
+              '$ifNull': [
+                {
+                  '$arrayElemAt': [
+                    '$result.confirmed', 1
+                  ]
+                }, 0
+              ]
+            }
+          ]
+        }, 
+        'date': 1, 
+        'population': 1
+      }
+    }, {
+      '$group': {
+        '_id': {
+          'country': '$country', 
+          'date': '$date'
+        }, 
+        'confirmed': {
+          '$sum': '$confirmed'
+        }, 
+        'deaths': {
+          '$sum': '$deaths'
+        }, 
+        'recovered': {
+          '$sum': '$recovered'
+        }, 
+        'weekly_confirmed': {
+          '$sum': '$weekly_confirmed'
+        }, 
+        'yearly_confirmed': {
+          '$sum': '$yearly_confirmed'
+        }, 
+        'population': {
+          '$sum': '$population'
+        }
+      }
+    }, {
+      '$addFields': {
+        'active': {
+          '$subtract': [
+            {
+              '$subtract': [
+                '$confirmed', '$deaths'
+              ]
+            }, '$recovered'
+          ]
+        }, 
+        'incidence': {
+          '$divide': [
+            {
+              '$multiply': [
+                '$yearly_confirmed', 100000
+              ]
+            }, '$population'
+          ]
+        }
+      }
+    }, {
+      '$sort': {
+        '_id.date': -1
+      }
+    }
+  ]
+
+  if (county == undefined) {
+    if (state != undefined) {
+      pipeline[0]['$match']['state'] = state;
+    }
+  } else {
+    pipeline[0]['$match']['state'] = state;
+    pipeline[0]['$match']['county'] = county;
+  }
+
+  console.log(pipeline);
+
+  redis_client.get(key, async (err, result) => {
+    if (err) return res.status(500).send(err);
+
+    // check if data present in cache
+    if (result) {
+      res.status(200).json(JSON.parse(result));
+    } else {
+      // get data from database and store in cache
+      covid19.collection("global_and_us").aggregate(pipeline).toArray(async (err, result) => {
+        if (err) return res.status(500).send(err);
+
+        // store the result from mongodb to cache
+        redis_client.setex(key, 28800, JSON.stringify({ source: "Redis Cache", result: result}));
+
+        // send the result back to client
+        res.send({ source: "Mongodb", result: result });
+      })
+    }
+  })
+})
 module.exports = router;
 
