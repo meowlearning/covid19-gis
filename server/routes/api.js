@@ -410,7 +410,7 @@ router.get('/graphInfo', async (req, res, next) => {
   const pipeline = [
     {
       '$match': {
-        'country': country, 
+        'country': country
       }
     }, {
       '$lookup': {
@@ -421,12 +421,12 @@ router.get('/graphInfo', async (req, res, next) => {
           'cur_county': '$county', 
           'weekly_date': {
             '$subtract': [
-              '$date', 86400 * 1000 * 7
+              '$date', 604800000
             ]
           }, 
           'yearly_date': {
             '$subtract': [
-              '$date', 86400 * 1000 * 365
+              '$date', 31536000000
             ]
           }
         }, 
@@ -493,6 +493,19 @@ router.get('/graphInfo', async (req, res, next) => {
             }
           ]
         }, 
+        'weekly_deaths': {
+          '$subtract': [
+            '$deaths', {
+              '$ifNull': [
+                {
+                  '$arrayElemAt': [
+                    '$result.deaths', 0
+                  ]
+                }, 0
+              ]
+            }
+          ]
+        }, 
         'yearly_confirmed': {
           '$subtract': [
             '$confirmed', {
@@ -526,6 +539,9 @@ router.get('/graphInfo', async (req, res, next) => {
         }, 
         'weekly_confirmed': {
           '$sum': '$weekly_confirmed'
+        }, 
+        'weekly_deaths': {
+          '$sum': '$weekly_deaths'
         }, 
         'yearly_confirmed': {
           '$sum': '$yearly_confirmed'
@@ -570,8 +586,6 @@ router.get('/graphInfo', async (req, res, next) => {
     pipeline[0]['$match']['state'] = state;
     pipeline[0]['$match']['county'] = county;
   }
-
-  console.log(pipeline);
 
   redis_client.get(key, async (err, result) => {
     if (err) return res.status(500).send(err);
