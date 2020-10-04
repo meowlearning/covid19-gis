@@ -27,19 +27,19 @@ class StatisticSummary extends Component {
                     graph: [{
                         "case": "Confirmed",
                         "Confirmed": this.props.data.confirmed,
-                        "color": "#8DD3C7"
+                        "color": "#8dd3c7"
                     }, {
                         "case": "Active",
                         "Active": this.props.data.active,
-                        "color": "#FB8072"
+                        "color": "#fb8072"
                     }, {
                         "case": "Recovered",
                         "Recovered": this.props.data.recovered,
-                        "color": "#BEBADA"
+                        "color": "#bebada"
                     }, {
                         "case": "Deaths",
                         "Deaths": this.props.data.deaths,
-                        "color": "#FFE92B"
+                        "color": "#ffb300"
                     }],
                 }
             })
