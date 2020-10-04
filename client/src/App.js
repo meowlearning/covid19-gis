@@ -38,7 +38,7 @@ class App extends Component {
     this.handleSelectedCaseChange = this.handleSelectedCaseChange.bind(this);
     this.getGISData = this.getGISData.bind(this);
     this.getGlobalInfo = this.getGlobalInfo.bind(this);
-    this.getCountries = this.getRegions.bind(this);
+    this.getRegions = this.getRegions.bind(this);
   }
 
 
@@ -145,6 +145,15 @@ class App extends Component {
       .catch(err => console.log(err))
   }
 
+  /**
+   * This will get the regions based on given context.
+   * if country is not defined return every countries
+   * if country is defined and state is not defined return all states of given country
+   * if country and state is defined return all counties of given country and state
+   * @param {String} country specify this to get states
+   * @param {String} state specify this and country to get counties
+   * @returns {Promise} Promise resolves into an array of regions and their locations
+   */
   getRegions(country, state) {
     country = country == undefined ? '' : country;
     state = state == undefined ? '' : state;
