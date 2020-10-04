@@ -47,7 +47,7 @@ router.get('/regions', async (req, res, next) => {
     }
   ]
 
-  if (country != undefined) {
+  if (country != '' && country != undefined) {
     // if countries is defined return list of states without the country itself
     pipeline[0]['$match']['Country_Region'] = country;
     pipeline[1]['$group']['_id']['state'] = '$Province_State';
@@ -55,7 +55,7 @@ router.get('/regions', async (req, res, next) => {
     pipeline[2]['$match']['_id.state']['$nin'] = [""];
 
     // if state is defined return list of counties, without country and states itself
-    if (state != undefined) {
+    if (state != '' && state != undefined) {
       pipeline[0]['$match']['Province_State'] = state;
       pipeline[1]['$group']['_id']['county'] = '$Admin2';
       pipeline[2]['$match']['_id.county'] = {};
@@ -503,13 +503,14 @@ router.get('/graphinfo', async (req, res, next) => {
     }
   ]
 
-  if (county == undefined) {
-    if (state != undefined) {
-      pipeline[0]['$match']['state'] = state;
-    }
-  } else {
+  if (state != '' && state != undefined) {
     pipeline[0]['$match']['state'] = state;
-    pipeline[0]['$match']['county'] = county;
+    pipeline[3]['$group']['_id']['state'] = '$state';
+
+    if (county != '' && county != undefined) {
+      pipeline[0]['$match']['county'] = county;
+      pipeline[3]['$group']['_id']['county'] = '$county';
+    }
   }
 
   redis_get(key)

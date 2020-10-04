@@ -145,19 +145,11 @@ class App extends Component {
       .catch(err => console.log(err))
   }
 
-  getRegions(country, state, county) {
-    axios.get(`/api/regions?country=${country}&state=${state}&county=${county}`)
-      .then(async ({ data }) => {
+  getRegions(country, state) {
+    country = country == undefined ? '' : country;
+    state = state == undefined ? '' : state;
 
-        // set countries
-        this.setState({
-          countries: data.result
-        })
-
-        // store data in session storage for later use
-        sessionStorage.setItem("countries", JSON.stringify(data.result))
-      })
-      .catch(err => console.log(err))
+    return axios.get(`/api/regions?country=${country}&state=${state}`)
   }
 
   componentDidMount() {
@@ -182,7 +174,18 @@ class App extends Component {
         countries: countries
       })
     } else {
-      this.getRegions();
+      this.getRegions()
+      .then(async ({ data }) => {
+
+        // set countries
+        this.setState({
+          countries: data.result
+        })
+
+        // store data in session storage for later use
+        sessionStorage.setItem("countries", JSON.stringify(data.result))
+      })
+      .catch(err => console.log(err))
     }
   }
 
