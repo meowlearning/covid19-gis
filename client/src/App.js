@@ -38,36 +38,56 @@ class App extends Component {
     this.handleSelectedCaseChange = this.handleSelectedCaseChange.bind(this);
     this.getGISData = this.getGISData.bind(this);
     this.getGlobalInfo = this.getGlobalInfo.bind(this);
-    this.getCountries = this.getCountries.bind(this);
+    this.getCountries = this.getRegions.bind(this);
   }
 
 
   getGISData(selectedCase) {
     let colors = null;
     let gradient = null;
+    let offset = 0;
+    let maxIntensity = 0;
+
     if (selectedCase == "Confirmed") {
       gradient = tinygradient([
-        "#00ffef",
-        "#0480f7",
-        "#0800ff",
+        "#659BDF",
+        "#4467C4",
+        '#2234A8',
+        '#00008C'
       ]);
-      colors = gradient.rgb(20).map(t => t.toHexString());
+
+      offset = 300;
+      maxIntensity = 300000;
     } else if (selectedCase == "Deaths") {
       gradient = tinygradient([
-        "#caff00",
-        "#f78204",
-        "#ff0000",
-      ])
-      colors = gradient.rgb(20).map(t => t.toHexString());
+        { color: '#FFA12C', pos: 0 },
+        { color: '#FE612C', pos: 0.1 },
+        { color: '#F11D28', pos: 1 }
+      ]);
+
+      offset = 300;
+      maxIntensity = 300000;
     } else if (selectedCase == "Recovered") {
       gradient = tinygradient([
-        "#e6ff70",
-        "#75ff70",
-        "#00ff6f"
-      ])
-      colors = gradient.rgb(20).map(t => t.toHexString());
+        "#B7FFBF",
+        "#95F985",
+        "#4DED30",
+        '#26D701',
+        '#00C301',
+        '#00AB08'
+      ]);
+
+      offset = 300;
+      maxIntensity = 300000;
+    } else if (selectedCase == "Active") {
+      offset = 300;
+      maxIntensity = 300000;
+    } else if (selectedCase == "Incidence") {
+      offset = 5;
+      maxIntensity = 5000;
     }
 
+    colors = gradient.rgb(1000).map(t => t.toHexString());
     colors.unshift("rgba(0, 0, 0, 0)");
 
     // get gis data and update state
@@ -81,7 +101,7 @@ class App extends Component {
           {
             lat: d.coords[1],
             lng: d.coords[0],
-            weight: d[selectedCase.toLowerCase()] || 0
+            weight: (d[selectedCase.toLowerCase()] || 0) ? d[selectedCase.toLowerCase()] + offset : 0
           }
         ))
 
@@ -93,7 +113,8 @@ class App extends Component {
             positions: positions_and_intensity,
             options: {
               radius: 15,
-              maxIntensity: 10000,
+              maxIntensity: maxIntensity,
+              opacity: 1,
               gradient: colors,
             }
           }
@@ -124,8 +145,8 @@ class App extends Component {
       .catch(err => console.log(err))
   }
 
-  getCountries() {
-    axios.get('/api/regions')
+  getRegions(country, state, county) {
+    axios.get(`/api/regions?country=${country}&state=${state}&county=${county}`)
       .then(async ({ data }) => {
 
         // set countries
@@ -161,7 +182,7 @@ class App extends Component {
         countries: countries
       })
     } else {
-      this.getCountries();
+      this.getRegions();
     }
   }
 
@@ -173,18 +194,18 @@ class App extends Component {
   }
 
   handleCountryOptionChange(value) {
-      const data = this.state.countries.find(({ _id }) => _id.country == value);
+    const data = this.state.countries.find(({ _id }) => _id.country == value);
 
-      this.setState({
-        selected: {
-          map: {
-            lat: data.lat,
-            lng: data.lng,
-            zoom: 5,
-          }
-        },
-        countryOption: value
-      })
+    this.setState({
+      selected: {
+        map: {
+          lat: data.lat,
+          lng: data.lng,
+          zoom: 5,
+        }
+      },
+      countryOption: value
+    })
   }
 
 

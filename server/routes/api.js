@@ -30,16 +30,20 @@ router.get('/regions', async (req, res, next) => {
       '$group': {
         '_id': {
           'country': '$Country_Region'
-        }, 
+        },
         'lat': {
           '$first': '$Lat'
-        }, 
+        },
         'lng': {
           '$first': '$Long_'
         }
       }
     }, {
       '$match': {}
+    }, {
+      '$sort': {
+        '_id': 1
+      }
     }
   ]
 
