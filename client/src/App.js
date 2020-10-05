@@ -65,8 +65,8 @@ class App extends Component {
         { color: '#F11D28', pos: 1 }
       ]);
 
-      offset = 300;
-      maxIntensity = 300000;
+      offset = 200;
+      maxIntensity = 200000;
     } else if (selectedCase == "Recovered") {
       gradient = tinygradient([
         "#B7FFBF",

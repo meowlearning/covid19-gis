@@ -199,7 +199,24 @@ router.get('/gis', async (req, res, next) => {
                   ]
                 }, '$population'
               ]
-            }
+            },
+            'fatality': {
+              '$cond': [
+                {
+                  '$eq': [
+                    '$confirmed', 0
+                  ]
+                }, 0, {
+                  '$multiply': [
+                    {
+                      '$divide': [
+                        '$deaths', '$confirmed'
+                      ]
+                    }, 100
+                  ]
+                }
+              ]
+            }      
           }
         }
       ]
@@ -494,7 +511,25 @@ router.get('/graphinfo', async (req, res, next) => {
               ]
             }, '$population'
           ]
+        },
+        'fatality': {
+          '$cond': [
+            {
+              '$eq': [
+                '$confirmed', 0
+              ]
+            }, 0, {
+              '$multiply': [
+                {
+                  '$divide': [
+                    '$deaths', '$confirmed'
+                  ]
+                }, 100
+              ]
+            }
+          ]
         }
+  
       }
     }, {
       '$sort': {
