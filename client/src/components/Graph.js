@@ -86,14 +86,13 @@ class Graph extends Component {
     mapData(data, selectedCase) {
         let tempData = [];
         let offset = 0;
+        let scale = 'linear';
 
         // in case we need another log for another case
         if (selectedCase.includes("log") && selectedCase.includes("confirmed")) {
             selectedCase = "confirmed";
             offset = 1;
-            this.setState({
-                scale: "log"
-            })
+            scale = 'log';
         }
 
         tempData = data.map(d => (
@@ -107,6 +106,7 @@ class Graph extends Component {
             mappedData: tempData,
             dataUnavailable: false,
             loading: false,
+            scale: scale
         })
 
     }
