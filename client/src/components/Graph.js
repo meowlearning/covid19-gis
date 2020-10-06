@@ -140,7 +140,7 @@ class Graph extends Component {
                             legendOffset: -12
                         }} />
             } else {
-                page = <Empty description={"Please Select Region"} />;
+                page = <Empty />;
             }
         } else {
             page = <Spin className="Loading" tip="Loading..." />;
