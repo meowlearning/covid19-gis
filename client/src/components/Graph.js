@@ -10,9 +10,34 @@ class Graph extends Component {
         info: "This show the detailed graph based on the selected country and selected case",
         data: null,
         mappedData: null,
-        SelectedCase: "Confirmed",
+        SelectedCase: "confirmed",
         options: {
-            case: ["Weekly Confirmed", "Weekly Deaths", "Confirmed", "Deaths", "Recovered", "Log confirmed"]
+            case: [
+                {
+                    value: "weekly_confirmed",
+                    text: "Weekly Confirmed"
+                },
+                {
+                    value: "weekly_deaths",
+                    text: "Weekly Deaths"
+                },
+                {
+                    value: "confirmed",
+                    text: "Confirmed"
+                },
+                {
+                    value: "deaths",
+                    text: "Deaths"
+                },
+                {
+                    value: "recovered",
+                    text: "Recovered"
+                },
+                {
+                    value: "log_confirmed",
+                    text: "Log Confirmed"
+                }
+            ]
         },
         scale: "linear",
         loading: false,
@@ -63,7 +88,7 @@ class Graph extends Component {
         let offset = 0;
 
         // in case we need another log for another case
-        if (selectedCase.includes("Log") && selectedCase.includes("confirmed")) {
+        if (selectedCase.includes("log") && selectedCase.includes("confirmed")) {
             selectedCase = "confirmed";
             offset = 1;
             this.setState({
@@ -74,7 +99,7 @@ class Graph extends Component {
         tempData = data.map(d => (
             {
                 x: d._id.date,
-                y: d[selectedCase.toLowerCase().replace(" ", "_")] + offset
+                y: (d[selectedCase] || 0) <=0 ? offset : d[selectedCase]
             }
         ));
 
@@ -160,7 +185,7 @@ class Graph extends Component {
                             style={{ width: 150 }}
                             onChange={this.handleSelectedCaseChange}>
                             {this.state.options.case.map((c) => {
-                                return <Option value={c}>{c}</Option>
+                                return <Option value={c.value}>{c.text}</Option>
                             })}
                         </Select>
                     </Col>

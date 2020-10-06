@@ -46,23 +46,23 @@ class HeatMap extends Component {
             infoWindow: null,
             marker: null
         },
-        SelectedCase: "Confirmed",
+        SelectedCase: "confirmed",
         options: {
             case: [
                 {
-                    value: "Confirmed",
+                    value: "confirmed",
                     text: "Confirmed"
                 },
                 {
-                    value: "Active",
+                    value: "active",
                     text: "Active"
                 },
                 {
-                    value: "Incidence",
+                    value: "incidence",
                     text: "Incidence rate"
                 },
                 {
-                    value: "Fatality",
+                    value: "fatality",
                     text: "Case-fatality ratio"
                 },
             ]
@@ -88,7 +88,7 @@ class HeatMap extends Component {
         let maxIntensity;
         let radius = 15;
 
-        if (selectedCase === "Confirmed") {
+        if (selectedCase === "confirmed") {
             gradient = tinygradient([
                 "#659BDF",
                 "#4467C4",
@@ -99,7 +99,7 @@ class HeatMap extends Component {
             // radius = 15;
             offset = 300;
             maxIntensity = 300000;
-        } else if (selectedCase === "Incidence") {
+        } else if (selectedCase === "incidence") {
             gradient = tinygradient([
                 '#FF8B01',
                 '#FA6F01',
@@ -112,7 +112,7 @@ class HeatMap extends Component {
             // radius = 10;
             offset = 5;
             maxIntensity = 5000;
-        } else if (selectedCase === "Active") {
+        } else if (selectedCase === "active") {
             gradient = tinygradient([
                 "#B7FFBF",
                 "#95F985",
@@ -125,7 +125,7 @@ class HeatMap extends Component {
             // radius = 15;
             offset = 300;
             maxIntensity = 300000;
-        } else if (selectedCase === "Fatality") {
+        } else if (selectedCase === "fatality") {
             gradient = tinygradient([
                 '#FB8CAB',
                 '#E65C9C',
@@ -147,7 +147,7 @@ class HeatMap extends Component {
             {
                 lat: d.coords[1],
                 lng: d.coords[0],
-                weight: (d[selectedCase.toLowerCase()] || 0) ? d[selectedCase.toLowerCase()] + offset : 0
+                weight: (d[selectedCase] || 0) ? d[selectedCase] + offset : 0
             }
         ))
 
