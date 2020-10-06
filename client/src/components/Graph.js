@@ -138,7 +138,10 @@ class Graph extends Component {
                             // tickRotation: -90,
                             legend: "time scale",
                             legendOffset: -12
-                        }} />
+                        }}
+                        isInteractive={true}
+                        useMesh={true}
+                    />
             } else {
                 page = <Empty />;
             }
@@ -146,7 +149,7 @@ class Graph extends Component {
             page = <Spin className="Loading" tip="Loading..." />;
         }
 
-    
+
         return (
             <Card title={`Selected Region Graph`} extra={<CustomTooltip info={this.state.info} />}>
                 <Row gutter={[8, 24]}>
