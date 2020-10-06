@@ -39,7 +39,18 @@ router.get('/regions', async (req, res, next) => {
         }
       }
     }, {
-      '$match': {}
+      '$match': {
+        'lat': {
+          '$nin': [
+            ""
+          ]
+        },
+        'lng': {
+          '$nin': [
+            ""
+          ]
+        }
+      }
     }, {
       '$sort': {
         '_id': 1
