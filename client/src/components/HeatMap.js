@@ -147,7 +147,7 @@ class HeatMap extends Component {
             {
                 lat: d.coords[1],
                 lng: d.coords[0],
-                weight: (d[selectedCase] || 0) ? d[selectedCase] + offset : 0
+                weight: (d[selectedCase] || 0) <= 0 ? d[selectedCase] + offset : 0
             }
         ))
 
