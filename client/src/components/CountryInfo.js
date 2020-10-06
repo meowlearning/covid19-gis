@@ -1,35 +1,39 @@
 import React, { Component } from 'react'
-import { Card } from 'antd';
+import { Card, Spin, Breadcrumb } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import Tooltip from "./Tooltip";
 
 const axios = require('axios');
 
+
 class CountryInfo extends Component {
-    
+
     state = {
-        info: "This is for selected country Information"
+        info: "This is for selected country Information",
+        loading: true,
+        breadcrumb: null
     }
 
-    componentDidMount(){
+    componentDidMount() {
+
+    }
+
+    componentDidUpdate(prevProps) {
+       if(prevProps.data != this.props.data){
+
+       }
+    }
+
+    makeBreadcrump(data){
        
     }
 
-    componentDidUpdate(prevProps){
-        if(prevProps.selectedCountry != this.props.selectedCountry){
-            
-        }
-    }
-
-    getCountryInfos(countries){
-        
-    }
-    
     render() {
+    
         return (
-            <Card title={`Country Info -- ${this.props.selectedCountry}`} extra={<Tooltip info={this.state.info}/>}>
+            <Card title={`Regional Info`} extra={<Tooltip info={this.state.info} />}>
                 <div className="country-info-container" style={{ width: "100%", height: "50vh" }}>
-
+                    
                 </div>
             </Card>
         )

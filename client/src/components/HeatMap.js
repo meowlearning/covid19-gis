@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import GoogleMapReact from 'google-map-react';
 import Tooltip from './Tooltip';
-import { Spin, Card } from 'antd';
+import { Spin, Card, Select } from 'antd';
 import "./HeatMap.css";
 
-
+const tinygradient = require('tinygradient');
+const { Option } = Select;
 const Marker = props => (
     <React.Fragment>
         <div
@@ -18,15 +19,6 @@ const Marker = props => (
     </React.Fragment>
 )
 
-
-const Dot = props => (
-    <React.Fragment>
-        <span class="dot" style={{
-            height: props.radius / 10,
-            width: props.radius /10
-        }} />
-    </React.Fragment>
-)
 
 class HeatMap extends Component {
     state = {
@@ -58,16 +50,100 @@ class HeatMap extends Component {
             map: null,
             infoWindow: null,
             marker: null
-        }
+        },
+        SelectedCase: "Confirmed",
+        options: {
+            case: ["Confirmed", "Deaths", "Recovered", "Active", "Incidence", "Fatality"]
+        },
+        map: null
     }
 
 
     constructor() {
         super();
+        this.handleSelectedCaseChange = this.handleSelectedCaseChange.bind(this);
+        this.processData = this.processData.bind(this);
     }
 
+    componentDidMount() {
+        this.processData(this.state.SelectedCase)
+    }
+
+    processData(selectedCase) {
+        let colors = null;
+        let gradient = null;
+        let offset = 0;
+        let maxIntensity = 0;
+
+        if (selectedCase == "Confirmed") {
+            gradient = tinygradient([
+                "#659BDF",
+                "#4467C4",
+                '#2234A8',
+                '#00008C'
+            ]);
+
+            offset = 300;
+            maxIntensity = 300000;
+        } else if (selectedCase == "Deaths") {
+            gradient = tinygradient([
+                { color: '#FFA12C', pos: 0 },
+                { color: '#FE612C', pos: 0.1 },
+                { color: '#F11D28', pos: 1 }
+            ]);
+
+            offset = 200;
+            maxIntensity = 200000;
+        } else if (selectedCase == "Recovered") {
+            gradient = tinygradient([
+                "#B7FFBF",
+                "#95F985",
+                "#4DED30",
+                '#26D701',
+                '#00C301',
+                '#00AB08'
+            ]);
+
+            offset = 300;
+            maxIntensity = 300000;
+        } else if (selectedCase == "Active") {
+            offset = 300;
+            maxIntensity = 300000;
+        } else if (selectedCase == "Incidence") {
+            offset = 5;
+            maxIntensity = 5000;
+        }
+
+        colors = gradient.rgb(1000).map(t => t.toHexString());
+        colors.unshift("rgba(0, 0, 0, 0)");
+
+        let position_and_intensity = this.props.gis.map(d => (
+            {
+                lat: d.coords[1],
+                lng: d.coords[0],
+                weight: (d[selectedCase.toLowerCase()] || 0) ? d[selectedCase.toLowerCase()] + offset : 0
+            }
+        ))
+
+        this.setState({
+            map: {
+                positions: position_and_intensity,
+                options: {
+                    radius: 15,
+                    maxIntensity: maxIntensity,
+                    opacity: 1,
+                    gradient: colors,
+                }
+            }
+        })
+    }
 
     componentDidUpdate(prevProps) {
+        if((prevProps.gis !== this.props.gis)){
+            this.processData(this.state.SelectedCase);
+        }
+
+
         if ((prevProps.lat !== this.props.lat) || (prevProps.lng !== this.props.lng)) {
             this.setState({
                 selected: {
@@ -84,12 +160,25 @@ class HeatMap extends Component {
         }
     }
 
+    handleSelectedCaseChange(value) {
+        this.processData(value);
+        this.setState({
+            SelectedCase: value
+        })
+    }
+
 
     render() {
         return (
-            <Card title="Geographic Information System" extra={<Tooltip info={this.state.info}/>}>
+            <Card title="Geographic Information System" extra={<Tooltip info={this.state.info} />}>
+                <Select defaultValue={this.state.SelectedCase} style={{ width: 150 }} onChange={this.handleSelectedCaseChange}>
+                    {this.state.options.case.map((c) => {
+                        return <Option value={c}>{c}</Option>
+                    })}
+                </Select>
+
                 <div className="Map" style={{ height: "50vh", width: "100%" }}>
-                    {(this.props.coordinates != null) ?
+                    {(this.state.map != null) ?
                         <GoogleMapReact
                             bootstrapURLKeys={{ key: this.state.API_KEY.google }}
                             defaultCenter={this.state.default.map.center}
@@ -97,16 +186,16 @@ class HeatMap extends Component {
                             zoom={this.state.selected.map.zoom}
                             defaultZoom={this.state.default.map.zoom}
                             heatmapLibrary={true}
-                            heatmap={this.props.coordinates}
+                            heatmap={this.state.map}
                         >
 
-                            {((this.props.lat !== 0) && (this.props.lng !== 0)) ? 
-                                <Marker 
-                                lat={this.props.lat}
-                                lng={this.props.lng}                    
-                            /> : null
-                            }   
-                            
+                            {((this.props.lat !== 0) && (this.props.lng !== 0)) ?
+                                <Marker
+                                    lat={this.props.lat}
+                                    lng={this.props.lng}
+                                /> : null
+                            }
+
                         </GoogleMapReact>
                         : <Spin className="Loading" tip="Loading..." />}
 

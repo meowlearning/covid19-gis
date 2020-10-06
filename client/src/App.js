@@ -3,21 +3,23 @@ import HeatMap from './components/HeatMap';
 import Graph from './components/Graph';
 import StatisticSummary from './components/Statistic';
 import CountryInfo from './components/CountryInfo';
-import { Layout, Select, Row, Col } from 'antd';
+import { Layout, Select, Row, Col, Tabs, Menu } from 'antd';
 import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 const CountryOtions = require('./components/data/CountryCoord.json');
 const axios = require("axios").default;
 const { Header, Footer, Content, Sider } = Layout;
 const { Option } = Select;
-const fs = require('fs');
-const tinygradient = require('tinygradient');
+const { TabPane } = Tabs;
+
 
 class App extends Component {
 
   state = {
     statistic: null,
-    map: null,
     countries: [],
+    states: [],
+    counties: [],
     selected: {
       map: {
         lat: 0,
@@ -25,100 +27,34 @@ class App extends Component {
         zoom: 0
       },
     },
-    SelectedCase: "Confirmed",
     SelectedCountry: "Global",
-    options: {
-      case: ["Confirmed", "Deaths", "Recovered"]
-    }
+    SelectedState: "",
+    SelectedCounty: "",
+    gis: [],
+    regionInfo: null,
+    graphData: null
   }
 
   constructor() {
     super();
     this.handleCountryOptionChange = this.handleCountryOptionChange.bind(this);
-    this.handleSelectedCaseChange = this.handleSelectedCaseChange.bind(this);
     this.getGISData = this.getGISData.bind(this);
     this.getGlobalInfo = this.getGlobalInfo.bind(this);
     this.getRegions = this.getRegions.bind(this);
+    this.getRegionInfo = this.getRegionInfo.bind(this);
+    this.handleStateOptionChange = this.handleStateOptionChange.bind(this);
+    this.handleCountyOptionChange = this.handleCountyOptionChange.bind(this);
   }
 
 
-  getGISData(selectedCase) {
-    let colors = null;
-    let gradient = null;
-    let offset = 0;
-    let maxIntensity = 0;
-
-    if (selectedCase == "Confirmed") {
-      gradient = tinygradient([
-        "#659BDF",
-        "#4467C4",
-        '#2234A8',
-        '#00008C'
-      ]);
-
-      offset = 300;
-      maxIntensity = 300000;
-    } else if (selectedCase == "Deaths") {
-      gradient = tinygradient([
-        { color: '#FFA12C', pos: 0 },
-        { color: '#FE612C', pos: 0.1 },
-        { color: '#F11D28', pos: 1 }
-      ]);
-
-      offset = 200;
-      maxIntensity = 200000;
-    } else if (selectedCase == "Recovered") {
-      gradient = tinygradient([
-        "#B7FFBF",
-        "#95F985",
-        "#4DED30",
-        '#26D701',
-        '#00C301',
-        '#00AB08'
-      ]);
-
-      offset = 300;
-      maxIntensity = 300000;
-    } else if (selectedCase == "Active") {
-      offset = 300;
-      maxIntensity = 300000;
-    } else if (selectedCase == "Incidence") {
-      offset = 5;
-      maxIntensity = 5000;
-    }
-
-    colors = gradient.rgb(1000).map(t => t.toHexString());
-    colors.unshift("rgba(0, 0, 0, 0)");
-
+  getGISData() {
     // get gis data and update state
     axios.get('/api/gis')
       .then(async ({ data }) => {
-        console.log(data)
-        let result = data.result;
-        let positions_and_intensity = [];
-
-        positions_and_intensity = result.map((d) => (
-          {
-            lat: d.coords[1],
-            lng: d.coords[0],
-            weight: (d[selectedCase.toLowerCase()] || 0) ? d[selectedCase.toLowerCase()] + offset : 0
-          }
-        ))
-
-        console.log(positions_and_intensity);
-
         // construct the data for the Heatmap
         this.setState({
-          map: {
-            positions: positions_and_intensity,
-            options: {
-              radius: 15,
-              maxIntensity: maxIntensity,
-              opacity: 1,
-              gradient: colors,
-            }
-          }
-        })
+          gis: data.result
+        }, () => console.log(this.state.gis))
       })
       .catch(err => console.log(err))
   }
@@ -155,10 +91,17 @@ class App extends Component {
    * @returns {Promise} Promise resolves into an array of regions and their locations
    */
   getRegions(country, state) {
-    country = country == undefined ? '' : country;
-    state = state == undefined ? '' : state;
+    country = country === undefined ? '' : country;
+    state = state === undefined ? '' : state;
 
     return axios.get(`/api/regions?country=${country}&state=${state}`)
+  }
+
+  getRegionInfo(country, state, county) {
+    state = state === undefined ? '' : state;
+    county = county === undefined ? '' : county;
+
+    return axios.get(`/api/graphinfo?country=${country}&state=${state}&county=${county}`)
   }
 
   componentDidMount() {
@@ -173,7 +116,7 @@ class App extends Component {
       this.getGlobalInfo();
     }
 
-    this.getGISData(this.state.SelectedCase);
+    this.getGISData();
 
     // get countries
     let countries = sessionStorage.getItem("countries");
@@ -184,30 +127,32 @@ class App extends Component {
       })
     } else {
       this.getRegions()
-      .then(async ({ data }) => {
+        .then(async ({ data }) => {
 
-        // set countries
-        this.setState({
-          countries: data.result
+          // set countries
+          this.setState({
+            countries: data.result,
+          })
+
+          // store data in session storage for later use
+          sessionStorage.setItem("countries", JSON.stringify(data.result))
         })
-
-        // store data in session storage for later use
-        sessionStorage.setItem("countries", JSON.stringify(data.result))
-      })
-      .catch(err => console.log(err))
+        .catch(err => console.log(err))
     }
   }
 
-  handleSelectedCaseChange(value) {
-    this.getGISData(value);
-    this.setState({
-      SelectedCase: value
-    })
-  }
-
   handleCountryOptionChange(value) {
-    const data = this.state.countries.find(({ _id }) => _id.country == value);
+    // set the state of graphdata to null
+    this.setState({
+      regionInfo: null,
+      graphData: null
+    })
 
+    // get the country
+    let country = value.key;
+
+    // get the location and center on the map
+    const data = this.state.countries.find(({ _id }) => _id.country == country);
     this.setState({
       selected: {
         map: {
@@ -216,75 +161,242 @@ class App extends Component {
           zoom: 5,
         }
       },
-      countryOption: value
     })
+
+    // change states list
+    this.getRegions(country)
+      .then(({ data }) => {
+        // set states
+        this.setState({
+          states: data.result
+        })
+      })
+      .catch(err => console.log(err))
+
+    // set state for selected country
+    this.setState({
+      SelectedCountry: country
+    })
+
+    // get country info and graph info
+    this.getRegionInfo(country)
+      .then(({ data }) => {
+        this.setState({
+          graphData: data.result,
+          regionInfo: data.result[data.result.length - 1]
+        })
+      })
   }
 
+  handleStateOptionChange(value) {
+    // initialize graph data to null
+    this.setState({
+      regionInfo: null,
+      graphData: null
+    })
+
+    // get state
+    let state = value.key;
+
+    // center into the state location
+    const data = this.state.states.find(({ _id }) => _id.state == state);
+    this.setState({
+      selected: {
+        map: {
+          lat: data.lat,
+          lng: data.lng,
+          zoom: 5,
+        }
+      },
+    })
+
+    // get all counties for the counties list
+    this.getRegions(this.state.SelectedCountry, state)
+      .then(({ data }) => {
+        // set the counties
+        this.setState({
+          counties: data.result
+        })
+      })
+      .catch(err => console.log(err))
+
+    // set selected state
+    this.setState({
+      SelectedState: state
+    })
+
+    // get state's graphinfo
+    this.getRegionInfo(this.state.SelectedCountry, state)
+      .then(({ data }) => {
+        this.setState({
+          graphData : data.result,
+          regionInfo: data.result[data.result.length - 1]
+        })
+      })
+  }
+
+  handleCountyOptionChange(value) {
+    // initialize the graph data and region info to null
+    this.setState({
+      regionInfo: null,
+      graphData: null
+    })
+
+    // get the county's name
+    let county = value.key;
+    
+    // center into the state location
+    const data = this.state.states.find(({ _id }) => _id.county == county);
+    this.setState({
+      selected: {
+        map: {
+          lat: data.lat,
+          lng: data.lng,
+          zoom: 5,
+        }
+      },
+    })
+    
+    // set selected county
+    this.setState({
+      SelectedCounty: county
+    })
+
+    // get county's graphinfo
+    this.getRegionInfo(this.state.SelectedCountry, this.state.SelectedState, county)
+      .then(({ data }) => {
+        this.setState({
+          graphData : data.result,
+          regionInfo: data.result[data.result.length - 1]
+        })
+      })
+  }
 
   render() {
     return (
       <Layout>
         <Header><h1 style={{ color: "white" }}>COVID-19</h1></Header>
         <Layout>
-          <Sider>
-            <Row gutter={[8, 24]}>
-              <Col key="Country-Selection" span={6}>
-                <h1 style={{ color: "white" }}>Country: </h1>
-                <Select defaultValue={this.state.SelectedCountry} style={{ width: 150 }} onChange={this.handleCountryOptionChange}>
-                  {this.state.countries.map((country) => {
-                    return <Option value={country._id.country}>{country._id.country}</Option>
-                  })}
-                </Select>
+          <Content
+          >
+            {/** Selection */}
+            <Row
+              gutter={[8, 8]}
+              type="flex"
+            >
+              <Col span={4}
+
+              >
+                <Tabs type="card">
+                  <TabPane
+                    tab="Country"
+                    key="Country"
+                    style={{
+                      overflow: 'auto',
+                      position: 'relative',
+                      height: "130vh"
+                    }}
+                  >
+                    <Menu
+                      mode="inline"
+                      onClick={this.handleCountryOptionChange}
+
+                    >
+                      {
+                        this.state.countries.map(c => {
+                          return <Menu.Item key={c._id.country}>{c._id.country}</Menu.Item>
+                        })
+                      }
+                    </Menu>
+                  </TabPane>
+                  <TabPane
+                    disabled={!this.state.states.length}
+                    tab="State"
+                    key="State"
+                    style={{
+                      overflow: 'auto',
+                      position: 'relative',
+                      height: "130vh"
+                    }}
+                  >
+                    <Menu
+                      mode="inline"
+                      onClick={this.handleStateOptionChange}
+                    >
+                      {
+                        this.state.states.map(c => {
+                          return <Menu.Item key={c._id.state}>{c._id.state}</Menu.Item>
+                        })
+                      }
+                    </Menu>
+                  </TabPane>
+                  <TabPane
+                    disabled={!this.state.counties.length}
+                    tab="County"
+                    key="County"
+                    style={{
+                      overflow: 'auto',
+                      position: 'relative',
+                      height: "130vh"
+                    }}
+                  >
+                    <Menu
+                      mode="inline"
+                      onClick={this.handleCountyOptionChange}
+                    >
+                      {
+                        this.state.counties.map(c => {
+                          return <Menu.Item key={c._id.county}>{c._id.county}</Menu.Item>
+                        })
+                      }
+                    </Menu>
+                  </TabPane>
+                </Tabs>
+              </Col>
+
+              {/** Content */}
+              <Col span={14}>
+                <Row gutter={[8, 8]}>
+                  <Col key="Heatmap" span={24}>
+                    <HeatMap
+                      gis={this.state.gis}
+                      lat={this.state.selected.map.lat}
+                      lng={this.state.selected.map.lng}
+                      zoom={this.state.selected.map.zoom}
+                    />
+                  </Col>
+                </Row>
+                <Row gutter={[8, 8]}>
+                  <Col key="Selected-Country-Graph" span={24}>
+                    <Graph
+                      data={this.state.graphData}
+                    />
+                  </Col>
+                </Row>
+              </Col>
+
+
+              <Col span={6}>
+                <Row gutter={[8, 8]}>
+                  <Col key="Country-Info" span={24}>
+                    <CountryInfo
+                      data={this.state.regionInfo}
+                    />
+                  </Col>
+                </Row>
+                <Row gutter={[8, 8]}>
+                  <Col key="World-Info" span={24}>
+                    <StatisticSummary
+                      data={this.state.statistic} />
+                  </Col>
+                </Row>
               </Col>
             </Row>
-            <Row gutter={[8, 24]}>
-              <Col key="Case-Selection" span={6}>
-                <h1 style={{ color: "white" }}>Case: </h1>
-                <Select defaultValue={this.state.SelectedCase} style={{ width: 150 }} onChange={this.handleSelectedCaseChange}>
-                  {this.state.options.case.map((c) => {
-                    return <Option value={c}>{c}</Option>
-                  })}
-                </Select>
-              </Col>
-            </Row>
+          </Content>
 
-
-          </Sider>
-          <Layout>
-            <Content>
-              <Row gutter={[8, 8]}>
-                <Col key="Heatmap" span={18}>
-                  <HeatMap coordinates={this.state.map}
-                    lat={this.state.selected.map.lat}
-                    lng={this.state.selected.map.lng}
-                    zoom={this.state.selected.map.zoom}
-                  />
-                </Col>
-                <Col key="Country-Info" span={6}>
-                  <CountryInfo
-                    selectedCountry={this.state.SelectedCountry}
-                  />
-                </Col>
-              </Row>
-              <Row gutter={[8, 8]}>
-                <Col key="Selected-Country-Graph" span={18}>
-                  <Graph
-                    selectedCountry={this.state.SelectedCountry}
-                    selectedCase={this.state.SelectedCase} />
-                </Col>
-                <Col key="World-Info" span={6}>
-                  <StatisticSummary
-                    data={this.state.statistic} />
-                </Col>
-              </Row>
-
-            </Content>
-            <Footer>
-
-            </Footer>
-          </Layout>
-        </Layout>
-      </Layout>
+        </Layout >
+        <Footer style={{ textAlign: "center" }}>Data taken from MongoDB ©2020</Footer>
+      </Layout >
 
     );
   }
