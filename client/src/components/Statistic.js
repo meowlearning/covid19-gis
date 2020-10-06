@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { ResponsiveBar } from '@nivo/bar'
 import { Statistic, Spin, Card, Divider, Row, Col } from 'antd';
-import Tooltip from './Tooltip';
+import CustomTooltip from './CustomTooltip';
 import "./StatisticSummary.css";
 
 class StatisticSummary extends Component {
@@ -12,16 +12,8 @@ class StatisticSummary extends Component {
         }
     }
 
-    constructor(props) {
-        super(props);
-    }
-
-    componentDidMount() {
-
-    }
-
     componentDidUpdate(prevProps) {
-        if (prevProps.data != this.props.data) {
+        if (prevProps.data !== this.props.data) {
             this.setState({
                 data: {
                     graph: [{
@@ -50,7 +42,7 @@ class StatisticSummary extends Component {
         const data = this.state.data.graph;
 
         return (
-            <Card title="World Statistic" extra={<Tooltip info={this.state.info} />}>
+            <Card title="World Statistic" extra={<CustomTooltip info={this.state.info} />}>
 
                 <div className="graph-summary" style={{ width: "100%", height: "36.3vh" }}>
                     {(data !== null) ?
@@ -71,22 +63,22 @@ class StatisticSummary extends Component {
                 <br />
                 <br />
                 <div className="Statistic-summary" >
-                    {(this.props.data != null && data != null) ?
+                    {(this.props.data !== null && data !== null) ?
                         <div className="Container">
                             <Row gutter={[48, 48]}>
                                 <Col key="Confirmed" span={12}>
-                                    <Statistic title="Confirmed" value={this.props.data.confirmed} valueStyle={{ color: data.find(c => c.case == "Confirmed").color }} />
+                                    <Statistic title="Confirmed" value={this.props.data.confirmed} valueStyle={{ color: data.find(c => c.case === "Confirmed").color }} />
                                 </Col>
                                 <Col key="Deaths" span={12}>
-                                    <Statistic title="Deaths" value={this.props.data.deaths} valueStyle={{ color: data.find(c => c.case == "Deaths").color }} />
+                                    <Statistic title="Deaths" value={this.props.data.deaths} valueStyle={{ color: data.find(c => c.case === "Deaths").color }} />
                                 </Col>
                             </Row>
                             <Row gutter={[48, 48]}>
                                 <Col key="Recovered" span={12}>
-                                    <Statistic title="Recovered" value={this.props.data.recovered} valueStyle={{ color: data.find(c => c.case == "Recovered").color }} />
+                                    <Statistic title="Recovered" value={this.props.data.recovered} valueStyle={{ color: data.find(c => c.case === "Recovered").color }} />
                                 </Col>
                                 <Col key="Active" span={12}>
-                                    <Statistic title="Active" value={this.props.data.active} valueStyle={{ color: data.find(c => c.case == "Active").color }} />
+                                    <Statistic title="Active" value={this.props.data.active} valueStyle={{ color: data.find(c => c.case === "Active").color }} />
                                 </Col>
                             </Row>
                         </div>

@@ -1,17 +1,17 @@
 import React, { Component } from 'react'
 import { InfoCircleOutlined } from '@ant-design/icons';
+import { Tooltip } from "antd";
 import './Tooltip.css'
 
-class Tooltip extends Component {
+class CustomTooltip extends Component {
     render() {
         return (
-            <div className="tooltip">
+            <Tooltip title={this.props.info}>
                 <InfoCircleOutlined />
-                <span className="tooltiptext">{this.props.info}</span>
-            </div>
+            </Tooltip>
         )
     }
 }
 
 
-export default Tooltip;
+export default CustomTooltip;

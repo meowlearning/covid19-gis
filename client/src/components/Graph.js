@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
-import { Spin, Card, Select } from 'antd';
+import { Spin, Card, Select, Empty, Row, Col } from 'antd';
 import { ResponsiveLine } from '@nivo/line';
-import Tooltip from "./Tooltip";
+import CustomTooltip from "./CustomTooltip";
 import './Graph.css'
-const axios = require('axios');
 const { Option } = Select;
 
 class Graph extends Component {
@@ -13,8 +12,9 @@ class Graph extends Component {
         mappedData: null,
         SelectedCase: "Confirmed",
         options: {
-            case: ["Confirmed", "Deaths", "Recovered"]
+            case: ["Weekly Confirmed", "Weekly Deaths", "Confirmed", "Deaths", "Recovered", "Log confirmed"]
         },
+        scale: "linear",
         loading: false,
         dataUnavailable: true
     }
@@ -26,7 +26,7 @@ class Graph extends Component {
     }
 
     componentDidMount() {
-        
+
     }
 
     componentDidUpdate(prevProps) {
@@ -40,6 +40,7 @@ class Graph extends Component {
                     mappedData: null
                 })
             } else if (this.props.data.length === 0) { // data unavailable
+                console.log("length 0")
                 this.setState({
                     loading: false,
                     dataUnavailable: true,
@@ -59,18 +60,28 @@ class Graph extends Component {
 
     mapData(data, selectedCase) {
         let tempData = [];
+        let offset = 0;
+
+        // in case we need another log for another case
+        if (selectedCase.includes("Log") && selectedCase.includes("confirmed")) {
+            selectedCase = "confirmed";
+            offset = 1;
+            this.setState({
+                scale: "log"
+            })
+        }
 
         tempData = data.map(d => (
             {
                 x: d._id.date,
-                y: d[selectedCase.toLowerCase()]
+                y: d[selectedCase.toLowerCase().replace(" ", "_")] + offset
             }
         ));
 
         this.setState({
             mappedData: tempData,
             dataUnavailable: false,
-            loading: false
+            loading: false,
         })
 
     }
@@ -86,7 +97,6 @@ class Graph extends Component {
         let page = <h1>Data is NOT Available</h1>;
 
         if ((!this.state.loading)) {
-            console.log(this.state.mappedData);
             if ((!this.state.dataUnavailable)) {
                 page =
                     <ResponsiveLine
@@ -105,7 +115,7 @@ class Graph extends Component {
                         }}
                         xFormat="time:%Y-%m-%d"
                         yScale={{
-                            type: "linear",
+                            type: this.state.scale,
                             min: "auto",
                             max: "auto",
                             stacked: false,
@@ -130,69 +140,35 @@ class Graph extends Component {
                             legendOffset: -12
                         }} />
             } else {
-                page = <h1>Data is NOT Available</h1>;
+                page = <Empty description={"Please Select Region"} />;
             }
         } else {
             page = <Spin className="Loading" tip="Loading..." />;
         }
-           
 
-        // // if ((this.state.dataUnavailable === true)) { // if data is unavailable
-        // //     page = <h1>Data is NOT Available</h1>;
-        // // } else if (this.state.loading === true) { // if data is available but still loading
-        // //     page = <Spin className="Loading" tip="Loading..." />;
-        // // } else if ((this.state.loading !== true) && (this.state.dataUnavailable !== true)) { // server the data
-        // //     page =
-        // //         <ResponsiveLine
-        // //             data={this.state.mappedData}
-        // //             margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
-        // //             xScale={{
-        // //                 type: "time",
-        // //                 format: "%Y-%m-%dT%H:%M:%S.%L%Z"
-        // //             }}
-        // //             xFormat="time:%Y-%m-%d"
-        // //             yScale={{
-        // //                 type: "linear",
-        // //                 min: "auto",
-        // //                 max: "auto",
-        // //                 stacked: false,
-        // //                 reverse: false
-        // //             }}
-        // //             axisTop={null}
-        // //             axisRight={null}
-        // //             axisLeft={{
-        // //                 orient: "left",
-        // //                 tickSize: 5,
-        // //                 tickPadding: 5,
-        // //                 tickRotation: 0,
-        // //                 legend: "count",
-        // //                 legendOffset: -40,
-        // //                 legendPosition: "middle"
-        // //             }}
-        // //             axisBottom={{
-        // //                 format: "%b %d",
-        // //                 tickValues: "every 2 days",
-        // //                 tickRotation: -90,
-        // //                 legend: "time scale",
-        // //                 legendOffset: -12
-        // //             }} />
-        // }
-
-
-
-
+    
         return (
-            <Card title={`Selected Region Graph`} extra={<Tooltip info={this.state.info} />}>
-
-                <Select defaultValue={this.state.SelectedCase} style={{ width: 150 }} onChange={this.handleSelectedCaseChange}>
-                    {this.state.options.case.map((c) => {
-                        return <Option value={c}>{c}</Option>
-                    })}
-                </Select>
-                <div className="graph-container" style={{ height: "60vh", width: "100%" }}>
-                    {page}
-                </div>
-
+            <Card title={`Selected Region Graph`} extra={<CustomTooltip info={this.state.info} />}>
+                <Row gutter={[8, 24]}>
+                    <Col span={24} >
+                        <Select
+                            defaultValue={this.state.SelectedCase}
+                            disabled={!this.props.data}
+                            style={{ width: 150 }}
+                            onChange={this.handleSelectedCaseChange}>
+                            {this.state.options.case.map((c) => {
+                                return <Option value={c}>{c}</Option>
+                            })}
+                        </Select>
+                    </Col>
+                </Row>
+                <Row gutter={[8, 24]}>
+                    <Col span={24} >
+                        <div className="graph-container" style={{ height: "45vh", width: "100%" }}>
+                            {page}
+                        </div>
+                    </Col>
+                </Row>
             </Card>
         );
     }

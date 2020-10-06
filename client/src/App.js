@@ -3,19 +3,19 @@ import HeatMap from './components/HeatMap';
 import Graph from './components/Graph';
 import StatisticSummary from './components/Statistic';
 import CountryInfo from './components/CountryInfo';
-import { Layout, Select, Row, Col, Tabs, Menu } from 'antd';
+import { Layout, Row, Col, Tabs, Menu , Card} from 'antd';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-const CountryOtions = require('./components/data/CountryCoord.json');
+import CustomTooltip from './components/CustomTooltip';
 const axios = require("axios").default;
-const { Header, Footer, Content, Sider } = Layout;
-const { Option } = Select;
+const { Header, Footer, Content } = Layout;
 const { TabPane } = Tabs;
 
 
 class App extends Component {
 
   state = {
+    info: "Region Selector",
     statistic: null,
     countries: [],
     states: [],
@@ -54,7 +54,7 @@ class App extends Component {
         // construct the data for the Heatmap
         this.setState({
           gis: data.result
-        }, () => console.log(this.state.gis))
+        })
       })
       .catch(err => console.log(err))
   }
@@ -142,17 +142,19 @@ class App extends Component {
   }
 
   handleCountryOptionChange(value) {
-    // set the state of graphdata to null
+    // nullify region info, graph data, states and counties
     this.setState({
       regionInfo: null,
-      graphData: null
+      graphData: null,
+      states: [],
+      counties: []
     })
 
     // get the country
     let country = value.key;
 
     // get the location and center on the map
-    const data = this.state.countries.find(({ _id }) => _id.country == country);
+    const data = this.state.countries.find(({ _id }) => _id.country === country);
     this.setState({
       selected: {
         map: {
@@ -189,17 +191,18 @@ class App extends Component {
   }
 
   handleStateOptionChange(value) {
-    // initialize graph data to null
+    // nullify graph data, region info, counties
     this.setState({
       regionInfo: null,
-      graphData: null
+      graphData: null,
+      counties: []
     })
 
     // get state
     let state = value.key;
 
     // center into the state location
-    const data = this.state.states.find(({ _id }) => _id.state == state);
+    const data = this.state.states.find(({ _id }) => _id.state === state);
     this.setState({
       selected: {
         map: {
@@ -229,7 +232,7 @@ class App extends Component {
     this.getRegionInfo(this.state.SelectedCountry, state)
       .then(({ data }) => {
         this.setState({
-          graphData : data.result,
+          graphData: data.result,
           regionInfo: data.result[data.result.length - 1]
         })
       })
@@ -244,9 +247,9 @@ class App extends Component {
 
     // get the county's name
     let county = value.key;
-    
+
     // center into the state location
-    const data = this.state.states.find(({ _id }) => _id.county == county);
+    const data = this.state.counties.find(({ _id }) => _id.county === county);
     this.setState({
       selected: {
         map: {
@@ -256,7 +259,7 @@ class App extends Component {
         }
       },
     })
-    
+
     // set selected county
     this.setState({
       SelectedCounty: county
@@ -266,7 +269,7 @@ class App extends Component {
     this.getRegionInfo(this.state.SelectedCountry, this.state.SelectedState, county)
       .then(({ data }) => {
         this.setState({
-          graphData : data.result,
+          graphData: data.result,
           regionInfo: data.result[data.result.length - 1]
         })
       })
@@ -279,83 +282,88 @@ class App extends Component {
         <Layout>
           <Content
           >
-            {/** Selection */}
             <Row
               gutter={[8, 8]}
               type="flex"
             >
-              <Col span={4}
-
-              >
-                <Tabs type="card">
-                  <TabPane
-                    tab="Country"
-                    key="Country"
+            {/** Region Selection */}
+              <Col span={5}>
+                <Card 
+                  title={`Region Selection`}
+                  extra={<CustomTooltip info={this.state.info}/>}
+                >
+                  <Tabs type="card"
                     style={{
-                      overflow: 'auto',
-                      position: 'relative',
-                      height: "130vh"
+                      height: "127vh"
                     }}
                   >
-                    <Menu
-                      mode="inline"
-                      onClick={this.handleCountryOptionChange}
-
+                    <TabPane
+                      tab="Country"
+                      key="Country"
+                      style={{
+                        overflow: 'auto',
+                        position: 'relative',
+                        height: "130vh"
+                      }}
                     >
-                      {
-                        this.state.countries.map(c => {
-                          return <Menu.Item key={c._id.country}>{c._id.country}</Menu.Item>
-                        })
-                      }
-                    </Menu>
-                  </TabPane>
-                  <TabPane
-                    disabled={!this.state.states.length}
-                    tab="State"
-                    key="State"
-                    style={{
-                      overflow: 'auto',
-                      position: 'relative',
-                      height: "130vh"
-                    }}
-                  >
-                    <Menu
-                      mode="inline"
-                      onClick={this.handleStateOptionChange}
+                      <Menu
+                        mode="inline"
+                        onClick={this.handleCountryOptionChange}
+                      >
+                        {
+                          this.state.countries.map(c => {
+                            return <Menu.Item key={c._id.country}>{c._id.country}</Menu.Item>
+                          })
+                        }
+                      </Menu>
+                    </TabPane>
+                    <TabPane
+                      disabled={!this.state.states.length}
+                      tab="State"
+                      key="State"
+                      style={{
+                        overflow: 'auto',
+                        position: 'relative',
+                        height: "130vh"
+                      }}
                     >
-                      {
-                        this.state.states.map(c => {
-                          return <Menu.Item key={c._id.state}>{c._id.state}</Menu.Item>
-                        })
-                      }
-                    </Menu>
-                  </TabPane>
-                  <TabPane
-                    disabled={!this.state.counties.length}
-                    tab="County"
-                    key="County"
-                    style={{
-                      overflow: 'auto',
-                      position: 'relative',
-                      height: "130vh"
-                    }}
-                  >
-                    <Menu
-                      mode="inline"
-                      onClick={this.handleCountyOptionChange}
+                      <Menu
+                        mode="inline"
+                        onClick={this.handleStateOptionChange}
+                      >
+                        {
+                          this.state.states.map(c => {
+                            return <Menu.Item key={c._id.state}>{c._id.state}</Menu.Item>
+                          })
+                        }
+                      </Menu>
+                    </TabPane>
+                    <TabPane
+                      disabled={!this.state.counties.length}
+                      tab="County"
+                      key="County"
+                      style={{
+                        overflow: 'auto',
+                        position: 'relative',
+                        height: "130vh"
+                      }}
                     >
-                      {
-                        this.state.counties.map(c => {
-                          return <Menu.Item key={c._id.county}>{c._id.county}</Menu.Item>
-                        })
-                      }
-                    </Menu>
-                  </TabPane>
-                </Tabs>
+                      <Menu
+                        mode="inline"
+                        onClick={this.handleCountyOptionChange}
+                      >
+                        {
+                          this.state.counties.map(c => {
+                            return <Menu.Item key={c._id.county}>{c._id.county}</Menu.Item>
+                          })
+                        }
+                      </Menu>
+                    </TabPane>
+                  </Tabs>
+                </Card>
               </Col>
-
               {/** Content */}
-              <Col span={14}>
+              <Col span={13}>
                 <Row gutter={[8, 8]}>
                   <Col key="Heatmap" span={24}>
                     <HeatMap
@@ -374,13 +382,14 @@ class App extends Component {
                   </Col>
                 </Row>
               </Col>
-
-
               <Col span={6}>
                 <Row gutter={[8, 8]}>
                   <Col key="Country-Info" span={24}>
                     <CountryInfo
                       data={this.state.regionInfo}
+                      country={this.state.SelectedCountry}
+                      state={this.state.SelectedState}
+                      county={this.state.SelectedCounty}
                     />
                   </Col>
                 </Row>
@@ -393,9 +402,8 @@ class App extends Component {
               </Col>
             </Row>
           </Content>
-
         </Layout >
-        <Footer style={{ textAlign: "center" }}>Data taken from MongoDB ©2020</Footer>
+        <Footer style={{ textAlign: "center" }}>Data taken from MongoDB -- MeowLearning © 2020</Footer>
       </Layout >
 
     );
