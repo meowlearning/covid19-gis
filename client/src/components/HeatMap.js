@@ -53,7 +53,24 @@ class HeatMap extends Component {
         },
         SelectedCase: "Confirmed",
         options: {
-            case: ["Confirmed", "Deaths", "Recovered", "Active", "Incidence", "Fatality"]
+            case: [
+                {
+                    value: "Confirmed",
+                    text: "Confirmed"
+                },
+                {
+                    value: "Active",
+                    text: "Active"
+                },
+                {
+                    value: "Incidence",
+                    text: "Incidence rate"
+                },
+                {
+                    value: "Fatality",
+                    text: "Case-fatality ratio"
+                },
+            ]
         },
         map: null
     }
@@ -85,16 +102,16 @@ class HeatMap extends Component {
 
             offset = 300;
             maxIntensity = 300000;
-        } else if (selectedCase == "Deaths") {
+        } else if (selectedCase == "Incidence") {
             gradient = tinygradient([
                 { color: '#FFA12C', pos: 0 },
                 { color: '#FE612C', pos: 0.1 },
                 { color: '#F11D28', pos: 1 }
             ]);
 
-            offset = 200;
-            maxIntensity = 200000;
-        } else if (selectedCase == "Recovered") {
+            offset = 2.4;
+            maxIntensity = 2400;
+        } else if (selectedCase == "Active") {
             gradient = tinygradient([
                 "#B7FFBF",
                 "#95F985",
@@ -106,12 +123,15 @@ class HeatMap extends Component {
 
             offset = 300;
             maxIntensity = 300000;
-        } else if (selectedCase == "Active") {
-            offset = 300;
-            maxIntensity = 300000;
-        } else if (selectedCase == "Incidence") {
-            offset = 5;
-            maxIntensity = 5000;
+        } else if (selectedCase == "Fatality") {
+            gradient = tinygradient([
+                '#FFB7C5',
+                '#7A5AC2',
+                '#663398'
+            ])
+
+            offset = 0.015;
+            maxIntensity = 15;
         }
 
         colors = gradient.rgb(1000).map(t => t.toHexString());
@@ -139,7 +159,7 @@ class HeatMap extends Component {
     }
 
     componentDidUpdate(prevProps) {
-        if((prevProps.gis !== this.props.gis)){
+        if ((prevProps.gis !== this.props.gis)) {
             this.processData(this.state.SelectedCase);
         }
 
@@ -173,7 +193,7 @@ class HeatMap extends Component {
             <Card title="Geographic Information System" extra={<Tooltip info={this.state.info} />}>
                 <Select defaultValue={this.state.SelectedCase} style={{ width: 150 }} onChange={this.handleSelectedCaseChange}>
                     {this.state.options.case.map((c) => {
-                        return <Option value={c}>{c}</Option>
+                        return <Option value={c.value}>{c.text}</Option>
                     })}
                 </Select>
 
