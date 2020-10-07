@@ -62,23 +62,14 @@ class Graph extends Component {
                 this.setState({
                     loading: true,
                     dataUnavailable: false,
-                    mappedData: null
                 })
             } else if (this.props.data.length === 0) { // data unavailable
-                console.log("length 0")
                 this.setState({
                     loading: false,
                     dataUnavailable: true,
-                    mappedData: []
                 })
             } else {
-                this.setState({
-                    loading: true,
-                    dataUnavailable: false,
-                    mappedData: null
-                }, () => {
-                    this.mapData(this.props.data, this.state.SelectedCase);
-                })
+                this.mapData(this.props.data, this.state.SelectedCase);
             }
         }
     }
@@ -98,7 +89,7 @@ class Graph extends Component {
         tempData = data.map(d => (
             {
                 x: d._id.date,
-                y: (d[selectedCase] || 0) <=0 ? offset : d[selectedCase]
+                y: (d[selectedCase] || 0) <= 0 ? offset : d[selectedCase]
             }
         ));
 

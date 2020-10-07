@@ -31,8 +31,8 @@ class App extends Component {
     SelectedState: "",
     SelectedCounty: "",
     gis: [],
-    regionInfo: null,
-    graphData: null
+    regionInfo: {},
+    graphData: {}
   }
 
   constructor() {
@@ -147,7 +147,9 @@ class App extends Component {
       regionInfo: null,
       graphData: null,
       states: [],
-      counties: []
+      counties: [],
+      SelectedState: "",
+      SelectedCounty: ""
     })
 
     // get the country
@@ -195,7 +197,8 @@ class App extends Component {
     this.setState({
       regionInfo: null,
       graphData: null,
-      counties: []
+      counties: [],
+      SelectedCounty: ""
     })
 
     // get state
