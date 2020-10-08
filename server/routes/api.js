@@ -227,7 +227,7 @@ router.get('/gis', async (req, res, next) => {
                   ]
                 }
               ]
-            }      
+            }
           }
         }
       ]
@@ -247,132 +247,253 @@ router.get('/gis', async (req, res, next) => {
 
 router.get('/graphinfo', async (req, res, next) => {
   const covid19 = req.app.mongodb.db("covid19");
-  let country = req.query.country;
-  let state = req.query.state;
-  let county = req.query.county;
+  let country = req.query.country === undefined ? '' : req.query.country;
+  let state = req.query.state === undefined ? '' : req.query.state;
+  let county = req.query.county === undefined ? '' : req.query.county;
   let key = `graphinfo_${country}_${state}_${county}`;
+
+  let match = {
+    'loc': {
+      '$exists': true
+    }
+  }
+
+  let set = {
+    '$set': {
+      'population': {
+        '$cond': [
+          {
+            '$and': [
+              {
+                '$anyElementTrue': [
+                  {
+                    '$map': {
+                      'input': [
+                        'US', 'Canada', 'France'
+                      ],
+                      'as': 'el',
+                      'in': {
+                        '$eq': [
+                          '$$el', '$country'
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }, '$state'
+            ]
+          }, 0, '$population'
+        ]
+      },
+      'confirmed': {
+        '$cond': [
+          {
+            '$and': [
+              {
+                '$anyElementTrue': [
+                  {
+                    '$map': {
+                      'input': [
+                        'France'
+                      ],
+                      'as': 'el',
+                      'in': {
+                        '$eq': [
+                          '$$el', '$country'
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }, '$state'
+            ]
+          }, 0, '$confirmed'
+        ]
+      },
+      'deaths': {
+        '$cond': [
+          {
+            '$and': [
+              {
+                '$anyElementTrue': [
+                  {
+                    '$map': {
+                      'input': [
+                        'France'
+                      ],
+                      'as': 'el',
+                      'in': {
+                        '$eq': [
+                          '$$el', '$country'
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }, '$state'
+            ]
+          }, 0, '$deaths'
+        ]
+      },
+      'recovered': {
+        '$cond': [
+          {
+            '$and': [
+              {
+                '$anyElementTrue': [
+                  {
+                    '$map': {
+                      'input': [
+                        'France', 'US', 'Canada'
+                      ],
+                      'as': 'el',
+                      'in': {
+                        '$eq': [
+                          '$$el', '$country'
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }, '$state'
+            ]
+          }, 0, '$recovered'
+        ]
+      }
+    }
+  }
+
+  let _id = {
+    'date': '$date'
+  }
+
+  if (country !== '') {
+    match['country'] = country;
+    _id['country'] = '$country';
+
+    if (state !== '') {
+      set = {
+        '$match': {}
+      }
+      match['state'] = state;
+      _id['state'] = '$state';
+
+      if (county !== '') {
+        match['county'] = county;
+        _id['county'] = '$county';
+      }
+    }
+  }
 
   const pipeline = [
     {
-      '$match': {
-        'country': country
+      '$match': match
+    }, {
+      '$sort': {
+          'date': 1
+      }
+    }, set, {
+      '$group': {
+        '_id': '$loc',
+        'docs': {
+          '$push': {
+            'date': '$date',
+            'country': '$country',
+            'state': '$state',
+            'county': '$county',
+            'confirmed': '$confirmed',
+            'deaths': '$deaths',
+            'recovered': '$recovered',
+            'population': '$population'
+          }
+        }
       }
     }, {
-      '$lookup': {
-        'from': 'global_and_us',
-        'let': {
-          'cur_country': '$country',
-          'cur_state': '$state',
-          'cur_county': '$county',
-          'weekly_date': {
-            '$subtract': [
-              '$date', 604800000
-            ]
-          },
-          'yearly_date': {
-            '$subtract': [
-              '$date', 31536000000
-            ]
-          }
-        },
-        'pipeline': [
-          {
-            '$match': {
-              '$expr': {
-                '$and': [
-                  {
-                    '$eq': [
-                      '$country', '$$cur_country'
-                    ]
-                  }, {
-                    '$eq': [
-                      '$state', '$$cur_state'
-                    ]
-                  }, {
-                    '$eq': [
-                      '$county', '$$cur_county'
-                    ]
-                  }, {
-                    '$or': [
-                      {
-                        '$eq': [
-                          '$date', '$$weekly_date'
-                        ]
-                      }, {
-                        '$eq': [
-                          '$date', '$$yearly_date'
+      '$set': {
+        'docs': {
+          '$map': {
+            'input': {
+              '$range': [
+                0, {
+                  '$size': '$docs'
+                }
+              ]
+            },
+            'as': 'idx',
+            'in': {
+              '$let': {
+                'vars': {
+                  'yearly': {
+                    '$arrayElemAt': [
+                      '$docs', {
+                        '$max': [
+                          0, {
+                            '$subtract': [
+                              '$$idx', 365
+                            ]
+                          }
                         ]
                       }
                     ]
+                  },
+                  'weekly': {
+                    '$arrayElemAt': [
+                      '$docs', {
+                        '$max': [
+                          0, {
+                            '$subtract': [
+                              '$$idx', 7
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  'this': {
+                    '$arrayElemAt': [
+                      '$docs', '$$idx'
+                    ]
                   }
-                ]
+                },
+                'in': {
+                  'date': '$$this.date',
+                  'country': '$$this.country',
+                  'state': '$$this.state',
+                  'county': '$$this.county',
+                  'confirmed': '$$this.confirmed',
+                  'deaths': '$$this.deaths',
+                  'recovered': '$$this.recovered',
+                  'weekly_confirmed': {
+                    '$subtract': [
+                      '$$this.confirmed', '$$weekly.confirmed'
+                    ]
+                  },
+                  'weekly_deaths': {
+                    '$subtract': [
+                      '$$this.deaths', '$$weekly.deaths'
+                    ]
+                  },
+                  'yearly_confirmed': {
+                    '$subtract': [
+                      '$$this.confirmed', '$$yearly.confirmed'
+                    ]
+                  },
+                  'population': '$$this.population'
+                }
               }
             }
           }
-        ],
-        'as': 'result'
+        }
       }
     }, {
-      '$project': {
-        'country': 1,
-        'state': 1,
-        'county': 1,
-        'coords': '$loc.coordinates',
-        'confirmed': 1,
-        'recovered': {
-          '$ifNull': [
-            '$recovered', 0
-          ]
-        },
-        'deaths': 1,
-        'weekly_confirmed': {
-          '$subtract': [
-            '$confirmed', {
-              '$ifNull': [
-                {
-                  '$arrayElemAt': [
-                    '$result.confirmed', 0
-                  ]
-                }, 0
-              ]
-            }
-          ]
-        },
-        'weekly_deaths': {
-          '$subtract': [
-            '$deaths', {
-              '$ifNull': [
-                {
-                  '$arrayElemAt': [
-                    '$result.deaths', 0
-                  ]
-                }, 0
-              ]
-            }
-          ]
-        },
-        'yearly_confirmed': {
-          '$subtract': [
-            '$confirmed', {
-              '$ifNull': [
-                {
-                  '$arrayElemAt': [
-                    '$result.confirmed', 1
-                  ]
-                }, 0
-              ]
-            }
-          ]
-        },
-        'date': 1,
-        'population': 1
+      '$unwind': '$docs'
+    }, {
+      '$replaceRoot': {
+        'newRoot': '$docs'
       }
     }, {
       '$group': {
-        '_id': {
-          'country': '$country',
-          'date': '$date'
-        },
+        '_id': _id,
         'confirmed': {
           '$sum': '$confirmed'
         },
@@ -396,7 +517,7 @@ router.get('/graphinfo', async (req, res, next) => {
         }
       }
     }, {
-      '$addFields': {
+      '$set': {
         'active': {
           '$subtract': [
             {
@@ -432,7 +553,6 @@ router.get('/graphinfo', async (req, res, next) => {
             }
           ]
         }
-  
       }
     }, {
       '$sort': {
@@ -441,16 +561,6 @@ router.get('/graphinfo', async (req, res, next) => {
     }
   ]
 
-  if (state != '' && state != undefined) {
-    pipeline[0]['$match']['state'] = state;
-    pipeline[3]['$group']['_id']['state'] = '$state';
-
-    if (county != '' && county != undefined) {
-      pipeline[0]['$match']['county'] = county;
-      pipeline[3]['$group']['_id']['county'] = '$county';
-    }
-  }
-
   redis_get(key)
     .then(async (result) => {
       if (result) {
@@ -458,7 +568,7 @@ router.get('/graphinfo', async (req, res, next) => {
         throw `Caught '${key}' in cache`;
       } else {
         // get data from database and store in cache
-        return covid19.collection("global_and_us").aggregate(pipeline).toArray()
+        return covid19.collection("global_and_us").aggregate(pipeline, { allowDiskUse:true }).toArray()
       }
     })
     .then(async (result) => {

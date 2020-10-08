@@ -183,7 +183,7 @@ class Graph extends Component {
                 </Row>
                 <Row gutter={[8, 24]}>
                     <Col span={24} >
-                        <div className="graph-container" style={{ height: "45vh", width: "100%" }}>
+                        <div className="graph-container" style={{ height: "43vh", width: "100%" }}>
                             {page}
                         </div>
                     </Col>

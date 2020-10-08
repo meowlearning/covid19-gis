@@ -98,6 +98,7 @@ class App extends Component {
   }
 
   getRegionInfo(country, state, county) {
+    country = country === undefined ? '' : country;
     state = state === undefined ? '' : state;
     county = county === undefined ? '' : county;
 
@@ -139,6 +140,22 @@ class App extends Component {
         })
         .catch(err => console.log(err))
     }
+
+    // get global info and global's graph
+    this.setState({
+      regionInfo: null,
+      graphData: null,
+    })
+
+    this.getRegionInfo()
+      .then(({ data }) => {
+        data.result[data.result.length - 1]['_id']['country'] = "Global"
+
+        this.setState({
+          graphData: data.result,
+          regionInfo: data.result[data.result.length - 1]
+        })
+      })
   }
 
   handleCountryOptionChange(value) {
@@ -297,7 +314,7 @@ class App extends Component {
                 >
                   <Tabs type="card"
                     style={{
-                      height: "127vh"
+                      height: "121vh"
                     }}
                   >
                     <TabPane
@@ -306,7 +323,7 @@ class App extends Component {
                       style={{
                         overflow: 'auto',
                         position: 'relative',
-                        height: "130vh"
+                        height: "121vh"
                       }}
                     >
                       <Menu
@@ -327,7 +344,7 @@ class App extends Component {
                       style={{
                         overflow: 'auto',
                         position: 'relative',
-                        height: "130vh"
+                        height: "121vh"
                       }}
                     >
                       <Menu
@@ -348,7 +365,7 @@ class App extends Component {
                       style={{
                         overflow: 'auto',
                         position: 'relative',
-                        height: "130vh"
+                        height: "121vh"
                       }}
                     >
                       <Menu
