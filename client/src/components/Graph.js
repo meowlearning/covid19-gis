@@ -171,7 +171,7 @@ class Graph extends Component {
                     <Col span={24} >
                         <Select
                             defaultValue={this.state.SelectedCase}
-                            disabled={!this.props.data}
+                            disabled={!this.props.data || !this.props.data.length}
                             style={{ width: 150 }}
                             onChange={this.handleSelectedCaseChange}>
                             {this.state.options.case.map((c) => {
