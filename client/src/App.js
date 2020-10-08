@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import HeatMap from './components/HeatMap';
 import Graph from './components/Graph';
 import StatisticSummary from './components/Statistic';
-import CountryInfo from './components/CountryInfo';
-import { Layout, Row, Col, Tabs, Menu , Card} from 'antd';
+import RegionInfo from './components/RegionInfo';
+import { Layout, Row, Col, Tabs, Menu, Card } from 'antd';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import CustomTooltip from './components/CustomTooltip';
@@ -20,12 +20,10 @@ class App extends Component {
     countries: [],
     states: [],
     counties: [],
-    selected: {
-      map: {
-        lat: 0,
-        lng: 0,
-        zoom: 0
-      },
+    map: {
+      lat: 0,
+      lng: 0,
+      zoom: 0
     },
     SelectedCountry: "Global",
     SelectedState: "",
@@ -39,7 +37,6 @@ class App extends Component {
     super();
     this.handleCountryOptionChange = this.handleCountryOptionChange.bind(this);
     this.getGISData = this.getGISData.bind(this);
-    this.getGlobalInfo = this.getGlobalInfo.bind(this);
     this.getRegions = this.getRegions.bind(this);
     this.getRegionInfo = this.getRegionInfo.bind(this);
     this.handleStateOptionChange = this.handleStateOptionChange.bind(this);
@@ -55,28 +52,6 @@ class App extends Component {
         this.setState({
           gis: data.result
         })
-      })
-      .catch(err => console.log(err))
-  }
-
-  getGlobalInfo() {
-    axios.get('/api/globalinfo')
-      .then(async ({ data }) => {
-        // construct the data for the statistic
-        let statistic = {
-          confirmed: data.confirmed,
-          deaths: data.deaths,
-          recovered: data.recovered,
-          active: data.active,
-          incidence: data.incidence
-        }
-
-        this.setState({
-          statistic: statistic
-        })
-
-        // store data in session storage for later use
-        sessionStorage.setItem("covid19-statistic", JSON.stringify(statistic));
       })
       .catch(err => console.log(err))
   }
@@ -98,7 +73,7 @@ class App extends Component {
   }
 
   getRegionInfo(country, state, county) {
-    country = country === undefined ? '' : country;
+    country = (country === undefined || country === 'Global') ? '' : country;
     state = state === undefined ? '' : state;
     county = county === undefined ? '' : county;
 
@@ -106,17 +81,6 @@ class App extends Component {
   }
 
   componentDidMount() {
-
-    let statistic = sessionStorage.getItem("covid19-statistic");
-    if (statistic) { // if data statistic exist use the data
-      statistic = JSON.parse(statistic);
-      this.setState({
-        statistic: statistic
-      })
-    } else { // if data statistic does not exist in session storage fetch the data from the server
-      this.getGlobalInfo();
-    }
-
     this.getGISData();
 
     // get countries
@@ -130,6 +94,15 @@ class App extends Component {
       this.getRegions()
         .then(async ({ data }) => {
 
+          data.result.unshift({
+            _id: {
+              country: 'Global'
+            },
+            lat: 0,
+            lng: 0
+          })
+
+          console.log(data.result);
           // set countries
           this.setState({
             countries: data.result,
@@ -141,7 +114,7 @@ class App extends Component {
         .catch(err => console.log(err))
     }
 
-    // get global info and global's graph
+    // setup global info and global's graph
     this.setState({
       regionInfo: null,
       graphData: null,
@@ -149,42 +122,40 @@ class App extends Component {
 
     this.getRegionInfo()
       .then(({ data }) => {
-        data.result[data.result.length - 1]['_id']['country'] = "Global"
-
+        // set up graph and info
         this.setState({
           graphData: data.result,
-          regionInfo: data.result[data.result.length - 1]
+          regionInfo: data.result[data.result.length - 1],
         })
       })
+      .catch(err => console.log(err))
   }
 
   handleCountryOptionChange(value) {
+    // get the country
+    let country = value.key;
+
+    // get location of country
+    const loc = this.state.countries.find(({ _id }) => _id.country === country);
+
     // nullify region info, graph data, states and counties
+    // set selected countries and location
     this.setState({
       regionInfo: null,
       graphData: null,
       states: [],
       counties: [],
       SelectedState: "",
-      SelectedCounty: ""
+      SelectedCounty: "",
+      SelectedCountry: country,
+      map: {
+        lat: loc.lat,
+        lng: loc.lng,
+        zoom: 5
+      }
     })
 
-    // get the country
-    let country = value.key;
-
-    // get the location and center on the map
-    const data = this.state.countries.find(({ _id }) => _id.country === country);
-    this.setState({
-      selected: {
-        map: {
-          lat: data.lat,
-          lng: data.lng,
-          zoom: 5,
-        }
-      },
-    })
-
-    // change states list
+    // update states list
     this.getRegions(country)
       .then(({ data }) => {
         // set states
@@ -194,11 +165,6 @@ class App extends Component {
       })
       .catch(err => console.log(err))
 
-    // set state for selected country
-    this.setState({
-      SelectedCountry: country
-    })
-
     // get country info and graph info
     this.getRegionInfo(country)
       .then(({ data }) => {
@@ -207,30 +173,27 @@ class App extends Component {
           regionInfo: data.result[data.result.length - 1]
         })
       })
+      .catch(err => console.log(err))
   }
 
   handleStateOptionChange(value) {
-    // nullify graph data, region info, counties
+    //  get the state
+    let state = value.key;
+
+    // get location of the state
+    const loc = this.state.states.find(({ _id }) => _id.state === state);
+
+    // nullify graph data, region info, counties, set selected state and location
     this.setState({
       regionInfo: null,
       graphData: null,
       counties: [],
-      SelectedCounty: ""
-    })
-
-    // get state
-    let state = value.key;
-
-    // center into the state location
-    const data = this.state.states.find(({ _id }) => _id.state === state);
-    this.setState({
-      selected: {
-        map: {
-          lat: data.lat,
-          lng: data.lng,
-          zoom: 5,
-        }
-      },
+      SelectedCounty: "",
+      SelectedState: state,
+      map: {
+        lat: loc.lat,
+        lng: loc.lng
+      }
     })
 
     // get all counties for the counties list
@@ -243,11 +206,6 @@ class App extends Component {
       })
       .catch(err => console.log(err))
 
-    // set selected state
-    this.setState({
-      SelectedState: state
-    })
-
     // get state's graphinfo
     this.getRegionInfo(this.state.SelectedCountry, state)
       .then(({ data }) => {
@@ -256,33 +214,27 @@ class App extends Component {
           regionInfo: data.result[data.result.length - 1]
         })
       })
+      .catch(err => console.log(err))
   }
 
   handleCountyOptionChange(value) {
-    // initialize the graph data and region info to null
-    this.setState({
-      regionInfo: null,
-      graphData: null
-    })
-
     // get the county's name
     let county = value.key;
 
-    // center into the state location
-    const data = this.state.counties.find(({ _id }) => _id.county === county);
-    this.setState({
-      selected: {
-        map: {
-          lat: data.lat,
-          lng: data.lng,
-          zoom: 5,
-        }
-      },
-    })
+    // get location of county
+    const loc = this.state.counties.find(({ _id }) => _id.county === county);
 
-    // set selected county
+
+    // nullify graph data and info, set selected county and location
     this.setState({
-      SelectedCounty: county
+      regionInfo: null,
+      graphData: null,
+      SelectedCounty: county,
+      map: {
+        lat: loc.lat,
+        lng: loc.lng,
+        zoom: 5
+      }
     })
 
     // get county's graphinfo
@@ -293,6 +245,7 @@ class App extends Component {
           regionInfo: data.result[data.result.length - 1]
         })
       })
+      .catch(err => console.log(err))
   }
 
   render() {
@@ -306,11 +259,11 @@ class App extends Component {
               gutter={[8, 8]}
               type="flex"
             >
-            {/** Region Selection */}
+              {/** Region Selection */}
               <Col span={5}>
-                <Card 
+                <Card
                   title={`Region Selection`}
-                  extra={<CustomTooltip info={this.state.info}/>}
+                  extra={<CustomTooltip info={this.state.info} />}
                 >
                   <Tabs type="card"
                     style={{
@@ -328,6 +281,7 @@ class App extends Component {
                     >
                       <Menu
                         mode="inline"
+                        defaultSelectedKeys={["Global"]}
                         onClick={this.handleCountryOptionChange}
                       >
                         {
@@ -388,14 +342,14 @@ class App extends Component {
                   <Col key="Heatmap" span={24}>
                     <HeatMap
                       gis={this.state.gis}
-                      lat={this.state.selected.map.lat}
-                      lng={this.state.selected.map.lng}
-                      zoom={this.state.selected.map.zoom}
+                      lat={this.state.map.lat}
+                      lng={this.state.map.lng}
+                      zoom={this.state.map.zoom}
                     />
                   </Col>
                 </Row>
                 <Row gutter={[8, 8]}>
-                  <Col key="Selected-Country-Graph" span={24}>
+                  <Col key="Selected-Region-Graph" span={24}>
                     <Graph
                       data={this.state.graphData}
                     />
@@ -404,8 +358,8 @@ class App extends Component {
               </Col>
               <Col span={6}>
                 <Row gutter={[8, 8]}>
-                  <Col key="Country-Info" span={24}>
-                    <CountryInfo
+                  <Col key="Region-Info" span={24}>
+                    <RegionInfo
                       data={this.state.regionInfo}
                       country={this.state.SelectedCountry}
                       state={this.state.SelectedState}
@@ -414,9 +368,9 @@ class App extends Component {
                   </Col>
                 </Row>
                 <Row gutter={[8, 8]}>
-                  <Col key="World-Info" span={24}>
+                  <Col key="Region-Statistic" span={24}>
                     <StatisticSummary
-                      data={this.state.statistic} />
+                      data={this.state.regionInfo} />
                   </Col>
                 </Row>
               </Col>

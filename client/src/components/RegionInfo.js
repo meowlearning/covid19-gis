@@ -5,10 +5,10 @@ import CustomTooltip from "./CustomTooltip";
 
 
 
-class CountryInfo extends Component {
+class RegionInfo extends Component {
 
     state = {
-        info: "This is for selected country Information",
+        info: "This is for selected region information",
         loading: false,
         dataUnavailable: true,
     }
@@ -48,7 +48,7 @@ class CountryInfo extends Component {
 
     NoSelectedRegion() {
         if (this.state.dataUnavailable) {
-            return <div className="no-selected-region" style={{
+            return <div style={{
                 height: "10em",
                 display: "flex",
                 alignItems: "center",
@@ -57,7 +57,7 @@ class CountryInfo extends Component {
                 <Empty />
             </div>
         } else if (this.state.loading) {
-            return <div className="no-selected-region" style={{
+            return <div style={{
                 height: "10em",
                 display: "flex",
                 alignItems: "center",
@@ -67,7 +67,7 @@ class CountryInfo extends Component {
             </div>
         }
 
-        return <div className="no-selected-region" style={{
+        return <div style={{
             height: "10em",
             display: "flex",
             alignItems: "center",
@@ -84,7 +84,7 @@ class CountryInfo extends Component {
 
         return (
             <Card title={`Regional Info`} extra={<CustomTooltip info={this.state.info} />}>
-                <div className="country-info-container" style={{ width: "100%", height: "50vh" }}>
+                <div className="region-info-container" style={{ width: "100%", height: "50vh" }}>
                     {
                         (!this.state.loading && !this.state.dataUnavailable && this.props.data) ?
                             <div>
@@ -131,4 +131,4 @@ class CountryInfo extends Component {
     }
 }
 
-export default CountryInfo;
+export default RegionInfo;

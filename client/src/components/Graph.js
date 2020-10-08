@@ -8,7 +8,6 @@ const { Option } = Select;
 class Graph extends Component {
     state = {
         info: "This show the detailed graph based on the selected country and selected case",
-        data: null,
         mappedData: null,
         SelectedCase: "confirmed",
         options: {

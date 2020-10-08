@@ -19,8 +19,8 @@ const redis_get = promisify(redis_client.get).bind(redis_client);
  */
 router.get('/regions', async (req, res, next) => {
   const covid19jhu = req.app.mongodb.db("covid19jhu");
-  let country = req.query.country;
-  let state = req.query.state;
+  let country = req.query.country === undefined ? '' : req.query.country;
+  let state = req.query.state === undefined ? '' : req.query.state;
   let key = `regions_${country}_${state}`;
 
   let pipeline = [
@@ -58,7 +58,7 @@ router.get('/regions', async (req, res, next) => {
     }
   ]
 
-  if (country != '' && country != undefined) {
+  if (country != '') {
     // if countries is defined return list of states without the country itself
     pipeline[0]['$match']['Country_Region'] = country;
     pipeline[1]['$group']['_id']['state'] = '$Province_State';
@@ -66,7 +66,7 @@ router.get('/regions', async (req, res, next) => {
     pipeline[2]['$match']['_id.state']['$nin'] = [""];
 
     // if state is defined return list of counties, without country and states itself
-    if (state != '' && state != undefined) {
+    if (state != '') {
       pipeline[0]['$match']['Province_State'] = state;
       pipeline[1]['$group']['_id']['county'] = '$Admin2';
       pipeline[2]['$match']['_id.county'] = {};
@@ -577,136 +577,6 @@ router.get('/graphinfo', async (req, res, next) => {
 
       // send the retult back to client
       return res.send({ source: "Mongodb", result: result });
-    })
-    .catch(err => console.log(err))
-})
-
-router.get('/globalinfo', async (req, res, next) => {
-  const covid19 = req.app.mongodb.db("covid19");
-  let key = 'globalinfo';
-
-  redis_get(key)
-    .then(async (result) => {
-      // check if data present in cache
-      if (result) {
-        res.send(JSON.parse(result));
-        throw `Caught '${key}' in cache`;
-      } else {
-        // get the last date in mongodb data
-        return covid19.collection("metadata").findOne()
-      }
-    })
-    .then(async ({ last_date }) => {
-      let pipeline = [
-        {
-          '$match': {
-            'date': last_date
-          }
-        }, {
-          '$group': {
-            '_id': '$date',
-            'population': {
-              '$sum': '$population'
-            },
-            'confirmed': {
-              '$sum': '$confirmed'
-            },
-            'deaths': {
-              '$sum': '$deaths'
-            },
-            'recovered': {
-              '$sum': '$recovered'
-            }
-          }
-        }, {
-          '$lookup': {
-            'from': 'global_and_us',
-            'let': {
-              'yearly_date': {
-                '$subtract': [
-                  '$_id', 86400 * 1000 * 365
-                ]
-              }
-            },
-            'pipeline': [
-              {
-                '$match': {
-                  '$expr': {
-                    '$and': [
-                      {
-                        '$eq': [
-                          '$date', '$$yearly_date'
-                        ]
-                      }
-                    ]
-                  }
-                }
-              }, {
-                '$group': {
-                  '_id': '$date',
-                  'confirmed': {
-                    '$sum': '$confirmed'
-                  },
-                  'deaths': {
-                    '$sum': '$deaths'
-                  },
-                  'recovered': {
-                    '$sum': '$recovered'
-                  }
-                }
-              }
-            ],
-            'as': 'result'
-          }
-        }, {
-          '$project': {
-            'population': '$population',
-            'confirmed': '$confirmed',
-            'deaths': '$deaths',
-            'recovered': '$recovered',
-            'active': {
-              '$subtract': [
-                {
-                  '$subtract': [
-                    '$confirmed', '$deaths'
-                  ]
-                }, '$recovered'
-              ]
-            },
-            'incidence': {
-              '$divide': [
-                {
-                  '$multiply': [
-                    {
-                      '$subtract': [
-                        '$confirmed', {
-                          '$ifNull': [
-                            {
-                              '$arrayElemAt': [
-                                '$result.confirmed', 0
-                              ]
-                            }, 0
-                          ]
-                        }
-                      ]
-                    }, 100000
-                  ]
-                }, '$population'
-              ]
-            }
-          }
-        }
-      ];
-
-      // aggregate and get the result
-      return covid19.collection("global_and_us").aggregate(pipeline).toArray()
-    })
-    .then(async (result) => {
-      // store data to redis
-      redis_client.setex(key, 28800, JSON.stringify({ source: "Redis Cache", ...result[0] }));
-
-      // send back to client
-      return res.send({ source: "Mongodb", ...result[0] });
     })
     .catch(err => console.log(err))
 })

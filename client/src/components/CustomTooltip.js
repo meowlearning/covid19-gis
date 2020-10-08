@@ -6,7 +6,7 @@ import './Tooltip.css'
 class CustomTooltip extends Component {
     render() {
         return (
-            <Tooltip title={this.props.info}>
+            <Tooltip placement="topLeft" title={this.props.info}>
                 <InfoCircleOutlined />
             </Tooltip>
         )
