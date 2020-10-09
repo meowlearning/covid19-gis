@@ -95,10 +95,14 @@ class HeatMap extends Component {
                     geocoder.geocode({ location: pos }, (results, status) => {
                         if (status === "OK") {
                             if (results[0]) {
+                                console.log(results[0])
+                                let country = results[0].address_components.find(a => a.types[0] === "country");
+                                let state = results[0].address_components.find(a => a.types[0] === "administrative_area_level_1");
+                                let county = results[0].address_components.find(a => a.types[0] === "administrative_area_level_2");
                                 this.props.handleGPSClick({
-                                    country: results[0].address_components.find(a => a.types[0] === "country").long_name,
-                                    state: results[0].address_components.find(a => a.types[0] === "administrative_area_level_1").long_name,
-                                    county: results[0].address_components.find(a => a.types[0] === "administrative_area_level_2").long_name,
+                                    country: country ? country.long_name : '',
+                                    state: state ? state.long_name : '',
+                                    county: county ? county.long_name : '',
                                     lat: pos.lat,
                                     lng: pos.lng,
                                     zoom: 10
