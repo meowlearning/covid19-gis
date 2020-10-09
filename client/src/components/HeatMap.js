@@ -92,14 +92,9 @@ class HeatMap extends Component {
                         lng: position.coords.longitude
                     }
 
-                    this.state.map.setCenter(pos);
-                    this.state.map.setZoom(5);
-
                     geocoder.geocode({ location: pos }, (results, status) => {
                         if (status === "OK") {
                             if (results[0]) {
-                                this.state.map.setZoom(11);
-
                                 this.props.handleGPSClick({
                                     country: results[0].address_components.find(a => a.types[0] === "country").long_name,
                                     state: results[0].address_components.find(a => a.types[0] === "administrative_area_level_1").long_name,
