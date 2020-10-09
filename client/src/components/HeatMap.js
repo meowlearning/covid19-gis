@@ -11,7 +11,7 @@ const { Option } = Select;
 
 const Marker = props => (
     <React.Fragment>
-        <CaretDownOutlined style={{fontSize: '30px'}}/>
+        <CaretDownOutlined style={{ fontSize: '30px' }} />
     </React.Fragment>
 )
 
@@ -21,30 +21,12 @@ class HeatMap extends Component {
             google: process.env.REACT_APP_GOOGLE_API || "AIzaSyA-AXXI0TXe55-vlmyJPOFg8gL5bnATQMY"
         },
         info: "This show the Situation in around the world",
-        default: {
-            map: {
-                center: {
-                    lat: 0,
-                    lng: 0,
-                },
-                zoom: 0
-            }
-        },
-        selected: {
-            map: {
-                center: {
-                    lat: 0,
-                    lng: 0
-                },
-                zoom: 0
+        pos: {
+            center: {
+                lat: 0,
+                lng: 0
             },
-            countryName: null
-        },
-        ref: {
-            maps: null,
-            map: null,
-            infoWindow: null,
-            marker: null
+            zoom: 0
         },
         SelectedCase: "confirmed",
         options: {
@@ -67,7 +49,10 @@ class HeatMap extends Component {
                 },
             ]
         },
-        map: null
+        heatmap: null,
+        map: null,
+        maps: null,
+        curPos: null
     }
 
 
@@ -75,11 +60,77 @@ class HeatMap extends Component {
         super();
         this.handleSelectedCaseChange = this.handleSelectedCaseChange.bind(this);
         this.processData = this.processData.bind(this);
+        this.initMap = this.initMap.bind(this);
+        this.handleLocationError = this.handleLocationError.bind(this);
+        this.getCurPos = this.getCurPos.bind(this);
     }
 
     componentDidMount() {
         this.processData(this.state.SelectedCase)
     }
+
+    handleLocationError(
+        browserHasGeolocation, infoWindow, pos
+    ) {
+        infoWindow.setPosition(pos);
+        infoWindow.setContent(
+            browserHasGeolocation
+                ? "Error: The Geolocation service failed."
+                : "Error: Your browser doesn't support geolocation."
+        );
+        infoWindow.open(this.state.map);
+    }
+
+    getCurPos() {
+        const infoWindow = new this.state.maps.InfoWindow();
+        const geocoder = new this.state.maps.Geocoder();
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    }
+
+                    this.state.map.setCenter(pos);
+                    this.state.map.setZoom(5);
+
+                    geocoder.geocode({ location: pos }, (results, status) => {
+                        if (status === "OK") {
+                          if (results[0]) {
+                            this.state.map.setZoom(11);
+
+                            this.setState({
+                                curPos: {
+                                    country: results[0].address_components.find(a => a.types[0] === "country").long_name,
+                                    state: results[0].address_components.find(a => a.types[0] === "administrative_area_level_1").long_name,
+                                    county: results[0].address_components.find(a => a.types[0] === "administrative_area_level_2").long_name
+                                }
+                            })
+                          } else {
+                            window.alert("No results found");
+                          }
+                        } else {
+                          window.alert("Geocoder failed due to: " + status);
+                        }
+                      });
+
+                }, () => {
+                    this.handleLocationError(true, infoWindow, this.state.map.getCenter());
+                }
+            )
+        } else {
+            this.handleLocationError(false, infoWindow, this.state.map.getCenter());
+        }
+    }
+
+    initMap({ map, maps }) {
+        this.setState({
+            map: map,
+            maps: maps
+        })
+    };
 
     processData(selectedCase) {
         let colors;
@@ -152,7 +203,7 @@ class HeatMap extends Component {
         ))
 
         this.setState({
-            map: {
+            heatmap: {
                 positions: position_and_intensity,
                 options: {
                     radius: radius,
@@ -171,16 +222,13 @@ class HeatMap extends Component {
 
         if ((prevProps.lat !== this.props.lat) || (prevProps.lng !== this.props.lng)) {
             this.setState({
-                selected: {
-                    map: {
-                        center: {
-                            lat: this.props.lat,
-                            lng: this.props.lng
-                        },
-                        zoom: this.props.zoom
+                pos: {
+                    center: {
+                        lat: this.props.lat,
+                        lng: this.props.lng
                     },
-                    countryName: this.props.countryName
-                }
+                    zoom: this.props.zoom
+                },
             })
         }
     }
@@ -208,17 +256,18 @@ class HeatMap extends Component {
                 <Row gutter={[8, 24]}>
                     <Col span={24} >
                         <div className="Map" style={{ height: "50vh", width: "100%" }}>
-                            {(this.state.map != null) ?
+                            {(this.state.heatmap != null) ?
                                 <GoogleMapReact
                                     bootstrapURLKeys={{ key: this.state.API_KEY.google }}
-                                    defaultCenter={this.state.default.map.center}
-                                    center={this.state.selected.map.center}
-                                    zoom={this.state.selected.map.zoom}
-                                    defaultZoom={this.state.default.map.zoom}
+                                    defaultCenter={this.state.pos.center}
+                                    center={this.state.pos.center}
+                                    zoom={this.state.pos.zoom}
+                                    defaultZoom={this.state.pos.zoom}
                                     heatmapLibrary={true}
-                                    heatmap={this.state.map}
+                                    heatmap={this.state.heatmap}
+                                    yesIWantToUseGoogleMapApiInternals
+                                    onGoogleApiLoaded={this.initMap}
                                 >
-
                                     {((this.props.lat !== 0) && (this.props.lng !== 0)) ?
                                         <Marker
                                             lat={this.props.lat}

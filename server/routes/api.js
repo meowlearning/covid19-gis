@@ -25,30 +25,28 @@ router.get('/regions', async (req, res, next) => {
 
   let pipeline = [
     {
-      '$match': {}
+      '$match': {
+        'Lat': {
+          '$nin': [
+            ''
+          ]
+        }, 
+        'Long_': {
+          '$nin': [
+            ''
+          ]
+        }
+      }
     }, {
       '$group': {
         '_id': {
           'country': '$Country_Region'
-        },
+        }, 
         'lat': {
           '$first': '$Lat'
-        },
+        }, 
         'lng': {
           '$first': '$Long_'
-        }
-      }
-    }, {
-      '$match': {
-        'lat': {
-          '$nin': [
-            ""
-          ]
-        },
-        'lng': {
-          '$nin': [
-            ""
-          ]
         }
       }
     }, {
@@ -61,16 +59,14 @@ router.get('/regions', async (req, res, next) => {
   if (country != '') {
     // if countries is defined return list of states without the country itself
     pipeline[0]['$match']['Country_Region'] = country;
-    pipeline[1]['$group']['_id']['state'] = '$Province_State';
-    pipeline[2]['$match']['_id.state'] = {};
-    pipeline[2]['$match']['_id.state']['$nin'] = [""];
+    pipeline[0]['$match']['Province_State'] = {'$nin': [""]}
+    pipeline[1]['$group']['_id']['state'] = '$Province_State'
 
     // if state is defined return list of counties, without country and states itself
     if (state != '') {
       pipeline[0]['$match']['Province_State'] = state;
+      pipeline[0]['$match']['Admin2'] = {'$nin': [""]};
       pipeline[1]['$group']['_id']['county'] = '$Admin2';
-      pipeline[2]['$match']['_id.county'] = {};
-      pipeline[2]['$match']['_id.county']['$nin'] = [""];
     }
   }
 

@@ -53,8 +53,6 @@ class StatisticSummary extends Component {
     }
 
     render() {
-        const data = this.state.data;
-
         return (
             <Card title="Region Statistic" extra={<CustomTooltip info={this.state.info} />}>
 

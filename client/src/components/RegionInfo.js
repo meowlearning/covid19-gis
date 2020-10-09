@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Spin, Card, Breadcrumb, Statistic, Row, Col, Empty, Divider } from 'antd';
+import { Spin, Card, Breadcrumb, Statistic, Row, Col, Empty } from 'antd';
 import CustomTooltip from "./CustomTooltip";
 
 
@@ -24,7 +24,6 @@ class RegionInfo extends Component {
 
     componentDidUpdate(prevProps) {
         if (prevProps.data !== this.props.data) {
-            console.log(this.props.data);
             if (this.props.data === null) {
                 this.setState({
                     loading: true,
