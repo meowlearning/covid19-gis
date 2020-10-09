@@ -32,7 +32,7 @@ class App extends Component {
     gis: [],
     regionInfo: {},
     graphData: {},
-    activeKey: "country" 
+    activeKey: "country"
   }
 
   constructor() {
@@ -269,7 +269,7 @@ class App extends Component {
     this.getRegionInfo(GPSData.country, GPSData.state, GPSData.county)
       .then(({ data }) => {
         if (data.result.length !== 0) {
-          return this.setState({
+          this.setState({
             SelectedCountry: GPSData.country,
             SelectedState: GPSData.state,
             SelectedCounty: GPSData.county,
@@ -282,15 +282,18 @@ class App extends Component {
             },
             activeKey: "country"
           })
+          return true;
         }
       })
-      .catch(err => console.log(err))
-
-    // try to get state level
-    this.getRegionInfo(GPSData.country, GPSData.state)
+      .then(gotData => {
+        if (!gotData) {
+          // try to get state level
+          return this.getRegionInfo(GPSData.country, GPSData.state)
+        }
+      })
       .then(({ data }) => {
         if (data.result.length !== 0) {
-          return this.setState({
+          this.setState({
             SelectedCountry: GPSData.country,
             SelectedState: GPSData.state,
             graphData: data.result,
@@ -302,26 +305,27 @@ class App extends Component {
             },
             activeKey: "country"
           })
+          return true;
         }
       })
-      .catch(err => console.log(err))
-
-    // try to get country level
-    this.getRegionInfo(GPSData.country)
-      .then(({ data }) => {
-        if (data.result.length !== 0) {
-          return this.setState({
-            SelectedCountry: GPSData.country,
-            graphData: data.result,
-            regionInfo: data.result[data.result.length - 1],
-            map: {
-              lat: GPSData.lat,
-              lng: GPSData.lng,
-              zoom: GPSData.zoom
-            },
-            activeKey: "country"
-          })
+      .then(gotData => {
+        if (!gotData) {
+          // try to get country level
+          return this.getRegionInfo(GPSData.country)
         }
+      })
+      .then(({ data }) => {
+        this.setState({
+          SelectedCountry: GPSData.country,
+          graphData: data.result,
+          regionInfo: data.result[data.result.length - 1],
+          map: {
+            lat: GPSData.lat,
+            lng: GPSData.lng,
+            zoom: GPSData.zoom
+          },
+          activeKey: "country"
+        })
       })
       .catch(err => console.log(err))
   }
@@ -347,7 +351,7 @@ class App extends Component {
                   title={`Region Selection`}
                   extra={<CustomTooltip info={this.state.info} />}
                 >
-                  <Tabs 
+                  <Tabs
                     type="card"
                     onChange={this.setTabKey}
                     activeKey={this.state.activeKey}
