@@ -89,14 +89,12 @@ class RegionInfo extends Component {
                             <div>
                                 <Row gutter={[vgutter, hgutter]}>
                                     <Col span={24} >
-                                        <div style={{ float: "left" }}>
                                             <Breadcrumb separator="" >
                                                 <b style={{ fontSize: "20px" }}>Location:&nbsp;</b>
                                                 <Breadcrumb.Item>{this.props.country}</Breadcrumb.Item>
                                                 <Breadcrumb.Item>{this.props.state}</Breadcrumb.Item>
                                                 <Breadcrumb.Item>{this.props.county}</Breadcrumb.Item>
                                             </Breadcrumb>
-                                        </div>
                                     </Col>
                                 </Row>
                                 <Row gutter={[vgutter, hgutter]} justify="center" align="middle">
