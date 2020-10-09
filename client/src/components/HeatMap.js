@@ -63,7 +63,6 @@ class HeatMap extends Component {
         this.initMap = this.initMap.bind(this);
         this.handleLocationError = this.handleLocationError.bind(this);
         this.getCurPos = this.getCurPos.bind(this);
-        this.handleGPSClick = this.handleGPSClick.bind(this);
     }
 
     componentDidMount() {
@@ -99,23 +98,24 @@ class HeatMap extends Component {
 
                     geocoder.geocode({ location: pos }, (results, status) => {
                         if (status === "OK") {
-                          if (results[0]) {
-                            this.state.map.setZoom(11);
+                            if (results[0]) {
+                                this.state.map.setZoom(11);
 
-                            this.setState({
-                                curPos: {
+                                this.props.handleGPSClick({
                                     country: results[0].address_components.find(a => a.types[0] === "country").long_name,
                                     state: results[0].address_components.find(a => a.types[0] === "administrative_area_level_1").long_name,
-                                    county: results[0].address_components.find(a => a.types[0] === "administrative_area_level_2").long_name
-                                }
-                            })
-                          } else {
-                            window.alert("No results found");
-                          }
+                                    county: results[0].address_components.find(a => a.types[0] === "administrative_area_level_2").long_name,
+                                    lat: pos.lat,
+                                    lng: pos.lng,
+                                    zoom: 10
+                                })
+                            } else {
+                                window.alert("No results found");
+                            }
                         } else {
-                          window.alert("Geocoder failed due to: " + status);
+                            window.alert("Geocoder failed due to: " + status);
                         }
-                      });
+                    });
 
                 }, () => {
                     this.handleLocationError(true, infoWindow, this.state.map.getCenter());
@@ -241,23 +241,24 @@ class HeatMap extends Component {
         })
     }
 
-    handleGPSClick(){
-
-    }
-
     render() {
         return (
             <Card title="Geographic Information System" extra={<CustomTooltip info={this.state.info} />}>
                 <Row gutter={[8, 24]}>
-                    <Col span={20} >
+                    <Col span={24} >
                         <Select defaultValue={this.state.SelectedCase} style={{ width: 150 }} onChange={this.handleSelectedCaseChange}>
                             {this.state.options.case.map((c) => {
                                 return <Option value={c.value}>{c.text}</Option>
                             })}
                         </Select>
-                    </Col>
-                    <Col span={4} >
-                        <Button type="primary" size='middle' icon={<CompassOutlined />} onClick={this.handleGPSClick}>Use My Location</Button>
+                        <Button
+                            disabled={!this.state.map && !this.state.maps}
+                            type="primary"
+                            size='middle'
+                            icon={<CompassOutlined />}
+                            onClick={this.getCurPos}
+                            style={{ float: "right" }}
+                        >Use My Location</Button>
                     </Col>
                 </Row>
                 <Row gutter={[8, 24]}>

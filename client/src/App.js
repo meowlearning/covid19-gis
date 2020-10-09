@@ -41,6 +41,7 @@ class App extends Component {
     this.getRegionInfo = this.getRegionInfo.bind(this);
     this.handleStateOptionChange = this.handleStateOptionChange.bind(this);
     this.handleCountyOptionChange = this.handleCountyOptionChange.bind(this);
+    this.handleGPSClick = this.handleGPSClick.bind(this);
   }
 
 
@@ -248,6 +249,71 @@ class App extends Component {
       .catch(err => console.log(err))
   }
 
+  handleGPSClick(GPSData) {
+    // nullify region info, graph data, states and counties
+    // selected countries and location
+    this.setState({
+      regionInfo: null,
+      graphData: null,
+      states: [],
+      counties: [],
+      SelectedState: "",
+      SelectedCounty: "",
+      SelectedCountry: "",
+    })
+
+    // try get get until county level then back up to state and finally country
+    this.getRegionInfo(GPSData.country, GPSData.state, GPSData.county)
+      .then(({ data }) => {
+        if (data.result.length !== 0) {
+          return this.setState({
+            graphData: data.result,
+            regionInfo: data.result[data.result.length - 1],
+            map: {
+              lat: GPSData.lat,
+              lng: GPSData.lng,
+              zoom: GPSData.zoom
+            }
+          })
+        }
+      })
+      .catch(err => console.log(err))
+
+    // try to get state level
+    this.getRegionInfo(GPSData.country, GPSData.state)
+      .then(({ data }) => {
+        if (data.result.length !== 0) {
+          return this.setState({
+            graphData: data.result,
+            regionInfo: data.result[data.result.length - 1],
+            map: {
+              lat: GPSData.lat,
+              lng: GPSData.lng,
+              zoom: GPSData.zoom
+            }
+          })
+        }
+      })
+      .catch(err => console.log(err))
+
+    // try to get country level
+    this.getRegionInfo(GPSData.country)
+      .then(({ data }) => {
+        if (data.result.length !== 0) {
+          return this.setState({
+            graphData: data.result,
+            regionInfo: data.result[data.result.length - 1],
+            map: {
+              lat: GPSData.lat,
+              lng: GPSData.lng,
+              zoom: GPSData.zoom
+            }
+          })
+        }
+      })
+      .catch(err => console.log(err))
+  }
+
   render() {
     return (
       <Layout>
@@ -345,6 +411,7 @@ class App extends Component {
                       lat={this.state.map.lat}
                       lng={this.state.map.lng}
                       zoom={this.state.map.zoom}
+                      handleGPSClick={this.handleGPSClick}
                     />
                   </Col>
                 </Row>
