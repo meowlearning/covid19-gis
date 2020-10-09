@@ -51,8 +51,7 @@ class HeatMap extends Component {
         },
         heatmap: null,
         map: null,
-        maps: null,
-        curPos: null
+        maps: null
     }
 
 

@@ -19,7 +19,7 @@ class RegionInfo extends Component {
     }
 
     componentDidMount() {
-        
+
     }
 
     componentDidUpdate(prevProps) {
@@ -39,7 +39,7 @@ class RegionInfo extends Component {
             else {
                 this.setState({
                     loading: false,
-                    dataUnavailable: false    
+                    dataUnavailable: false
                 })
             }
         }
@@ -88,18 +88,15 @@ class RegionInfo extends Component {
                         (!this.state.loading && !this.state.dataUnavailable && this.props.data) ?
                             <div>
                                 <Row gutter={[vgutter, hgutter]}>
-                                    <Col span={4} >
-                                        <Breadcrumb separator="">
-                                            <Breadcrumb.Item>Location</Breadcrumb.Item>
-                                            <Breadcrumb.Separator>:</Breadcrumb.Separator>
-                                        </Breadcrumb>
-                                    </Col>
-                                    <Col span={20} >
-                                        <Breadcrumb separator=">">
-                                            <Breadcrumb.Item>{this.props.country}</Breadcrumb.Item>
-                                            <Breadcrumb.Item>{this.props.state}</Breadcrumb.Item>
-                                            <Breadcrumb.Item>{this.props.county}</Breadcrumb.Item>
-                                        </Breadcrumb>
+                                    <Col span={24} >
+                                        <div style={{ float: "left" }}>
+                                            <Breadcrumb separator="" >
+                                                <b style={{ fontSize: "20px" }}>Location:&nbsp;</b>
+                                                <Breadcrumb.Item>{this.props.country}</Breadcrumb.Item>
+                                                <Breadcrumb.Item>{this.props.state}</Breadcrumb.Item>
+                                                <Breadcrumb.Item>{this.props.county}</Breadcrumb.Item>
+                                            </Breadcrumb>
+                                        </div>
                                     </Col>
                                 </Row>
                                 <Row gutter={[vgutter, hgutter]} justify="center" align="middle">

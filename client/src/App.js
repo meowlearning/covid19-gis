@@ -7,6 +7,7 @@ import { Layout, Row, Col, Tabs, Menu, Card } from 'antd';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import CustomTooltip from './components/CustomTooltip';
+import { ConsoleSqlOutlined } from '@ant-design/icons';
 const axios = require("axios").default;
 const { Header, Footer, Content } = Layout;
 const { TabPane } = Tabs;
@@ -30,7 +31,8 @@ class App extends Component {
     SelectedCounty: "",
     gis: [],
     regionInfo: {},
-    graphData: {}
+    graphData: {},
+    activeKey: "country" 
   }
 
   constructor() {
@@ -42,6 +44,7 @@ class App extends Component {
     this.handleStateOptionChange = this.handleStateOptionChange.bind(this);
     this.handleCountyOptionChange = this.handleCountyOptionChange.bind(this);
     this.handleGPSClick = this.handleGPSClick.bind(this);
+    this.setTabKey = this.setTabKey.bind(this);
   }
 
 
@@ -267,13 +270,17 @@ class App extends Component {
       .then(({ data }) => {
         if (data.result.length !== 0) {
           return this.setState({
+            SelectedCountry: GPSData.country,
+            SelectedState: GPSData.state,
+            SelectedCounty: GPSData.county,
             graphData: data.result,
             regionInfo: data.result[data.result.length - 1],
             map: {
               lat: GPSData.lat,
               lng: GPSData.lng,
               zoom: GPSData.zoom
-            }
+            },
+            activeKey: "country"
           })
         }
       })
@@ -284,13 +291,16 @@ class App extends Component {
       .then(({ data }) => {
         if (data.result.length !== 0) {
           return this.setState({
+            SelectedCountry: GPSData.country,
+            SelectedState: GPSData.state,
             graphData: data.result,
             regionInfo: data.result[data.result.length - 1],
             map: {
               lat: GPSData.lat,
               lng: GPSData.lng,
               zoom: GPSData.zoom
-            }
+            },
+            activeKey: "country"
           })
         }
       })
@@ -301,17 +311,23 @@ class App extends Component {
       .then(({ data }) => {
         if (data.result.length !== 0) {
           return this.setState({
+            SelectedCountry: GPSData.country,
             graphData: data.result,
             regionInfo: data.result[data.result.length - 1],
             map: {
               lat: GPSData.lat,
               lng: GPSData.lng,
               zoom: GPSData.zoom
-            }
+            },
+            activeKey: "country"
           })
         }
       })
       .catch(err => console.log(err))
+  }
+
+  setTabKey = activeKey => {
+    this.setState({ activeKey }, () => console.log(this.state.activeKey))
   }
 
   render() {
@@ -331,14 +347,17 @@ class App extends Component {
                   title={`Region Selection`}
                   extra={<CustomTooltip info={this.state.info} />}
                 >
-                  <Tabs type="card"
+                  <Tabs 
+                    type="card"
+                    onChange={this.setTabKey}
+                    activeKey={this.state.activeKey}
                     style={{
                       height: "121vh"
                     }}
                   >
                     <TabPane
                       tab="Country"
-                      key="Country"
+                      key="country"
                       style={{
                         overflow: 'auto',
                         position: 'relative',
@@ -360,7 +379,7 @@ class App extends Component {
                     <TabPane
                       disabled={!this.state.states.length}
                       tab="State"
-                      key="State"
+                      key="state"
                       style={{
                         overflow: 'auto',
                         position: 'relative',
@@ -381,7 +400,7 @@ class App extends Component {
                     <TabPane
                       disabled={!this.state.counties.length}
                       tab="County"
-                      key="County"
+                      key="county"
                       style={{
                         overflow: 'auto',
                         position: 'relative',
