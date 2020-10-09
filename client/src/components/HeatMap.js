@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import GoogleMapReact from 'google-map-react';
 import CustomTooltip from './CustomTooltip';
-import { Spin, Card, Select, Row, Col } from 'antd';
-import { CaretDownOutlined } from "@ant-design/icons";
+import { Spin, Card, Select, Row, Col, Button } from 'antd';
+import { EnvironmentFilled, CompassOutlined } from "@ant-design/icons";
 import "./HeatMap.css";
 
 const tinygradient = require('tinygradient');
@@ -11,7 +11,7 @@ const { Option } = Select;
 
 const Marker = props => (
     <React.Fragment>
-        <CaretDownOutlined style={{ fontSize: '30px' }} />
+        <EnvironmentFilled style={{ fontSize: '30px' }} />
     </React.Fragment>
 )
 
@@ -63,6 +63,7 @@ class HeatMap extends Component {
         this.initMap = this.initMap.bind(this);
         this.handleLocationError = this.handleLocationError.bind(this);
         this.getCurPos = this.getCurPos.bind(this);
+        this.handleGPSClick = this.handleGPSClick.bind(this);
     }
 
     componentDidMount() {
@@ -240,17 +241,23 @@ class HeatMap extends Component {
         })
     }
 
+    handleGPSClick(){
+
+    }
 
     render() {
         return (
             <Card title="Geographic Information System" extra={<CustomTooltip info={this.state.info} />}>
                 <Row gutter={[8, 24]}>
-                    <Col span={24} >
+                    <Col span={20} >
                         <Select defaultValue={this.state.SelectedCase} style={{ width: 150 }} onChange={this.handleSelectedCaseChange}>
                             {this.state.options.case.map((c) => {
                                 return <Option value={c.value}>{c.text}</Option>
                             })}
                         </Select>
+                    </Col>
+                    <Col span={4} >
+                        <Button type="primary" size='middle' icon={<CompassOutlined />} onClick={this.handleGPSClick}>Use My Location</Button>
                     </Col>
                 </Row>
                 <Row gutter={[8, 24]}>
