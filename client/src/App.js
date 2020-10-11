@@ -51,10 +51,10 @@ class App extends Component {
   getGISData() {
     // get gis data and update state
     axios.get('/api/gis')
-      .then(async ({ data }) => {
+      .then(async ({ data: {result} }) => {
         // construct the data for the Heatmap
         this.setState({
-          gis: data.result
+          gis: result
         })
       })
       .catch(err => console.log(err))
@@ -96,9 +96,9 @@ class App extends Component {
       })
     } else {
       this.getRegions()
-        .then(async ({ data }) => {
+        .then(async ({ data: {result} }) => {
 
-          data.result.unshift({
+          result.unshift({
             _id: {
               country: 'Global'
             },
@@ -106,14 +106,13 @@ class App extends Component {
             lng: 0
           })
 
-          console.log(data.result);
           // set countries
           this.setState({
-            countries: data.result,
+            countries: result,
           })
 
           // store data in session storage for later use
-          sessionStorage.setItem("countries", JSON.stringify(data.result))
+          sessionStorage.setItem("countries", JSON.stringify(result))
         })
         .catch(err => console.log(err))
     }
@@ -125,11 +124,11 @@ class App extends Component {
     })
 
     this.getRegionInfo()
-      .then(({ data }) => {
+      .then(({ data: {result} }) => {
         // set up graph and info
         this.setState({
-          graphData: data.result,
-          regionInfo: data.result[data.result.length - 1],
+          graphData: result,
+          regionInfo: result[result.length - 1],
         })
       })
       .catch(err => console.log(err))
@@ -161,20 +160,20 @@ class App extends Component {
 
     // update states list
     this.getRegions(country)
-      .then(({ data }) => {
+      .then(({ data: {result} }) => {
         // set states
         this.setState({
-          states: data.result
+          states: result
         })
       })
       .catch(err => console.log(err))
 
     // get country info and graph info
     this.getRegionInfo(country)
-      .then(({ data }) => {
+      .then(({ data: {result} }) => {
         this.setState({
-          graphData: data.result,
-          regionInfo: data.result[data.result.length - 1]
+          graphData: result,
+          regionInfo: result[result.length - 1]
         })
       })
       .catch(err => console.log(err))
@@ -202,20 +201,20 @@ class App extends Component {
 
     // get all counties for the counties list
     this.getRegions(this.state.SelectedCountry, state)
-      .then(({ data }) => {
+      .then(({ data: {result} }) => {
         // set the counties
         this.setState({
-          counties: data.result
+          counties: result
         })
       })
       .catch(err => console.log(err))
 
     // get state's graphinfo
     this.getRegionInfo(this.state.SelectedCountry, state)
-      .then(({ data }) => {
+      .then(({ data: {result} }) => {
         this.setState({
-          graphData: data.result,
-          regionInfo: data.result[data.result.length - 1]
+          graphData: result,
+          regionInfo: result[result.length - 1]
         })
       })
       .catch(err => console.log(err))
@@ -243,10 +242,10 @@ class App extends Component {
 
     // get county's graphinfo
     this.getRegionInfo(this.state.SelectedCountry, this.state.SelectedState, county)
-      .then(({ data }) => {
+      .then(({ data: {result} }) => {
         this.setState({
-          graphData: data.result,
-          regionInfo: data.result[data.result.length - 1]
+          graphData: result,
+          regionInfo: result[result.length - 1]
         })
       })
       .catch(err => console.log(err))
@@ -260,21 +259,21 @@ class App extends Component {
       graphData: null,
       states: [],
       counties: [],
+      SelectedCountry: "",
       SelectedState: "",
       SelectedCounty: "",
-      SelectedCountry: "",
     })
 
     // try get get until county level then back up to state and finally country
     this.getRegionInfo(GPSData.country, GPSData.state, GPSData.county)
-      .then(({ data }) => {
-        if (data.result.length !== 0) {
+      .then(({ data: {result} }) => {
+        if (result.length !== 0) {
           this.setState({
             SelectedCountry: GPSData.country,
             SelectedState: GPSData.state,
             SelectedCounty: GPSData.county,
-            graphData: data.result,
-            regionInfo: data.result[data.result.length - 1],
+            graphData: result,
+            regionInfo: result[result.length - 1],
             map: {
               lat: GPSData.lat,
               lng: GPSData.lng,
@@ -291,13 +290,13 @@ class App extends Component {
           return this.getRegionInfo(GPSData.country, GPSData.state)
         }
       })
-      .then(({ data }) => {
-        if (data.result.length !== 0) {
+      .then(({ data: {result} }) => {
+        if (result.length !== 0) {
           this.setState({
             SelectedCountry: GPSData.country,
             SelectedState: GPSData.state,
-            graphData: data.result,
-            regionInfo: data.result[data.result.length - 1],
+            graphData: result,
+            regionInfo: result[result.length - 1],
             map: {
               lat: GPSData.lat,
               lng: GPSData.lng,
@@ -314,11 +313,11 @@ class App extends Component {
           return this.getRegionInfo(GPSData.country)
         }
       })
-      .then(({ data }) => {
+      .then(({ data: {result} }) => {
         this.setState({
           SelectedCountry: GPSData.country,
-          graphData: data.result,
-          regionInfo: data.result[data.result.length - 1],
+          graphData: result,
+          regionInfo: result[result.length - 1],
           map: {
             lat: GPSData.lat,
             lng: GPSData.lng,
