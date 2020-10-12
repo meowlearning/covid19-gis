@@ -88,9 +88,9 @@ class RegionInfo extends Component {
                         (!this.state.loading && !this.state.dataUnavailable && this.props.data) ?
                             <div>
                                 <Row gutter={[vgutter, hgutter]}>
-                                    <Col span={24} >
+                                    <Col span={24}>
+                                        <b style={{ fontSize: "15px", float: "left" }}>Location:&nbsp;</b>
                                         <Breadcrumb separator=">" >
-                                            <b style={{ fontSize: "20px" }}>Location:&nbsp;</b>
                                             <Breadcrumb.Item>{this.props.country}</Breadcrumb.Item>
                                             <Breadcrumb.Item>{this.props.state}</Breadcrumb.Item>
                                             <Breadcrumb.Item>{this.props.county}</Breadcrumb.Item>

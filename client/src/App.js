@@ -288,11 +288,37 @@ class App extends Component {
           return this.getRegionInfo(GPSData.country, GPSData.state)
         }
       })
-      .then(({ data: {result} }) => {
-        if (result.length !== 0) {
+      .then((data) => {
+        if (data) {
+          let {data: {result}} = data;
+          if (result.length !== 0) {
+            this.setState({
+              SelectedCountry: GPSData.country,
+              SelectedState: GPSData.state,
+              graphData: result,
+              regionInfo: result[result.length - 1],
+              map: {
+                lat: GPSData.lat,
+                lng: GPSData.lng,
+                zoom: GPSData.zoom
+              },
+              activeKey: "country"
+            })
+            return true;
+          }
+        }
+      })
+      .then(gotData => {
+        if (!gotData) {
+          // try to get country level
+          return this.getRegionInfo(GPSData.country)
+        }
+      })
+      .then((data) => {
+        if (data) {
+          let {data: {result}} = data;
           this.setState({
             SelectedCountry: GPSData.country,
-            SelectedState: GPSData.state,
             graphData: result,
             regionInfo: result[result.length - 1],
             map: {
@@ -302,27 +328,7 @@ class App extends Component {
             },
             activeKey: "country"
           })
-          return true;
         }
-      })
-      .then(gotData => {
-        if (!gotData) {
-          // try to get country level
-          return this.getRegionInfo(GPSData.country)
-        }
-      })
-      .then(({ data: {result} }) => {
-        this.setState({
-          SelectedCountry: GPSData.country,
-          graphData: result,
-          regionInfo: result[result.length - 1],
-          map: {
-            lat: GPSData.lat,
-            lng: GPSData.lng,
-            zoom: GPSData.zoom
-          },
-          activeKey: "country"
-        })
       })
       .catch(err => console.log(err))
   }
