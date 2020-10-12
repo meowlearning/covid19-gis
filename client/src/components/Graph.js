@@ -4,6 +4,7 @@ import { ResponsiveLine } from '@nivo/line';
 import CustomTooltip from "./CustomTooltip";
 import './Graph.css'
 const { Option } = Select;
+const d3 = require('d3-scale');
 
 class Graph extends Component {
     state = {
@@ -50,7 +51,6 @@ class Graph extends Component {
     }
 
     componentDidMount() {
-
     }
 
     componentDidUpdate(prevProps) {
@@ -113,6 +113,20 @@ class Graph extends Component {
 
         if ((!this.state.loading)) {
             if ((!this.state.dataUnavailable)) {
+                const max = Math.max.apply(Math, this.state.mappedData.map(d => d.y))
+                const min = Math.min.apply(Math, this.state.mappedData.map(d => d.y))
+                let unitScale;
+                let tickValues
+
+                if (this.state.scale === "linear") {
+                    unitScale = d3.scaleLinear().domain([min, max]);
+                    tickValues = unitScale.ticks(10);
+                } else if (this.state.scale === "log") {
+                    unitScale = d3.scaleLog().domain([min, max]);
+                    let format10 = unitScale.tickFormat(10, "");
+                    tickValues = unitScale.ticks(10).map(format10);
+                }
+
                 page =
                     <ResponsiveLine
                         data={
@@ -139,8 +153,10 @@ class Graph extends Component {
                         axisTop={null}
                         axisRight={null}
                         axisLeft={{
+                            format: ".2s",
                             orient: "left",
                             tickSize: 5,
+                            tickValues: tickValues.filter(v => v !== ""),
                             tickPadding: 5,
                             tickRotation: 0,
                             legend: "count",
