@@ -246,7 +246,7 @@ class HeatMap extends Component {
                     <Col span={24} >
                         <Select defaultValue={this.state.SelectedCase} style={{ width: 150 }} onChange={this.handleSelectedCaseChange}>
                             {this.state.options.case.map((c) => {
-                                return <Option value={c.value}>{c.text}</Option>
+                                return <Option key={c.value} value={c.value}>{c.text}</Option>
                             })}
                         </Select>
                         <Button

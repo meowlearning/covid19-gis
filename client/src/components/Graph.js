@@ -191,7 +191,7 @@ class Graph extends Component {
                             style={{ width: 150 }}
                             onChange={this.handleSelectedCaseChange}>
                             {this.state.options.case.map((c) => {
-                                return <Option value={c.value}>{c.text}</Option>
+                                return <Option key={c.value} value={c.value}>{c.text}</Option>
                             })}
                         </Select>
                     </Col>
