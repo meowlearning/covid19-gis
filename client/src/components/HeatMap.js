@@ -206,7 +206,7 @@ class HeatMap extends Component {
                 options: {
                     radius: radius,
                     maxIntensity: maxIntensity,
-                    opacity: 1,
+                    opacity: 0.7,
                     gradient: colors,
                 }
             }
