@@ -11,24 +11,27 @@ New Project for COVID19 with new Datasource and revamped back-end + front-end
 ![Current Progress Oct 01 pt.1](https://github.com/meowlearning/covid19-gis/blob/graph/notes/GIS-Oct-01pt1.PNG?raw=true)
 ![Current Progress Oct 01 pt.2](https://github.com/meowlearning/covid19-gis/blob/graph/notes/GIS-Oct-01pt2.PNG?raw=true)
 ![Current Progress Oct 01 pt.3](https://github.com/meowlearning/covid19-gis/blob/graph/notes/GIS-Oct-01pt3.PNG?raw=true)
-## 07 October 2020
+### 07 October 2020
 ![Current Progress Oct 07 pt.1](https://github.com/meowlearning/covid19-gis/blob/graph/notes/GIS-Oct-07pt1.PNG?raw=true)
 ![Current Progress Oct 07 pt.2](https://github.com/meowlearning/covid19-gis/blob/graph/notes/GIS-Oct-07pt2.PNG?raw=true)
 
 ## Website
-https://covid19-gis-project.herokuapp.com/
+https://covid-19-data-visualisation.herokuapp.com/
+
+
+## How to install (please run this before any of the below!!!)
+1. ``` npm i --prefix server ```
+2. ``` npm i --prefix client ```
+3. ``` npm i --prefix test ```
 
 ## How to Run
 ### Manually
-First we need to Run the Server: 
-1. ```cd server```
-2. ``` npm install```
-3. ``` npm start ```
-
-then open another terminal, and run the client: 
-1. ```cd client```
-2. ```npm install```
-3. ```npm start```
+3. ``` npm start --prefix server ```
+4. ``` npm start --prefix client ```
 
 ### Using Docker
 On the root directory run: ```docker-compose up```
+
+## How to Run Test
+1. ``` npm i --prefix test ```
+2. ``` npm test --prefix test ```

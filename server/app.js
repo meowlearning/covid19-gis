@@ -37,11 +37,10 @@ MongoClient.connect(DATABASE_URL, {
 })
   .then(async (db) => {
     app.mongodb = db;
+    app.emit('ready');
 
     const covid19 = db.db("covid19");
     const covid19jhu = db.db("covid19jhu");
-
-    console.log("Connected successfully to mongodb server");
 
     // app.use('/', indexRouter);
     app.use('/api', apiRouter);
@@ -65,5 +64,9 @@ MongoClient.connect(DATABASE_URL, {
   })
   .catch(err => console.log(err))
 
+
+app.on('ready', () => {
+  console.log("Connected successfully to mongodb server");
+})
 
 module.exports = app;

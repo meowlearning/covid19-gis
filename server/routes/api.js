@@ -30,7 +30,7 @@ router.get('/regions', async (req, res, next) => {
           '$nin': [
             ''
           ]
-        }, 
+        },
         'Long_': {
           '$nin': [
             ''
@@ -41,10 +41,10 @@ router.get('/regions', async (req, res, next) => {
       '$group': {
         '_id': {
           'country': '$Country_Region'
-        }, 
+        },
         'lat': {
           '$first': '$Lat'
-        }, 
+        },
         'lng': {
           '$first': '$Long_'
         }
@@ -59,13 +59,13 @@ router.get('/regions', async (req, res, next) => {
   if (country != '') {
     // if countries is defined return list of states without the country itself
     pipeline[0]['$match']['Country_Region'] = country;
-    pipeline[0]['$match']['Province_State'] = {'$nin': [""]}
+    pipeline[0]['$match']['Province_State'] = { '$nin': [""] }
     pipeline[1]['$group']['_id']['state'] = '$Province_State'
 
     // if state is defined return list of counties, without country and states itself
     if (state != '') {
       pipeline[0]['$match']['Province_State'] = state;
-      pipeline[0]['$match']['Admin2'] = {'$nin': [""]};
+      pipeline[0]['$match']['Admin2'] = { '$nin': [""] };
       pipeline[1]['$group']['_id']['county'] = '$Admin2';
     }
   }
@@ -88,7 +88,9 @@ router.get('/regions', async (req, res, next) => {
       // send the result back to client
       return res.send({ source: "Mongodb", result: result });
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      console.log(err)
+    })
 })
 
 router.get('/gis', async (req, res, next) => {
@@ -238,7 +240,9 @@ router.get('/gis', async (req, res, next) => {
       // send the result back to client
       return res.send({ source: "Mongodb", result: result });
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      console.log(err)
+    })
 })
 
 router.get('/graphinfo', async (req, res, next) => {
@@ -386,7 +390,7 @@ router.get('/graphinfo', async (req, res, next) => {
       '$match': match
     }, {
       '$sort': {
-          'date': 1
+        'date': 1
       }
     }, set, {
       '$group': {
@@ -564,7 +568,7 @@ router.get('/graphinfo', async (req, res, next) => {
         throw `Caught '${key}' in cache`;
       } else {
         // get data from database and store in cache
-        return covid19.collection("global_and_us").aggregate(pipeline, { allowDiskUse:true }).toArray()
+        return covid19.collection("global_and_us").aggregate(pipeline, { allowDiskUse: true }).toArray()
       }
     })
     .then(async (result) => {
@@ -574,7 +578,9 @@ router.get('/graphinfo', async (req, res, next) => {
       // send the retult back to client
       return res.send({ source: "Mongodb", result: result });
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      console.log(err)
+    })
 })
 
 module.exports = router;
