@@ -89,7 +89,7 @@ router.get('/regions', async (req, res, next) => {
       return res.send({ source: "Mongodb", result: result });
     })
     .catch(err => {
-      // console.log(err)
+      console.log(err)
     })
 })
 
@@ -241,7 +241,7 @@ router.get('/gis', async (req, res, next) => {
       return res.send({ source: "Mongodb", result: result });
     })
     .catch(err => {
-      // console.log(err)
+      console.log(err)
     })
 })
 
@@ -579,7 +579,7 @@ router.get('/graphinfo', async (req, res, next) => {
       return res.send({ source: "Mongodb", result: result });
     })
     .catch(err => {
-      // console.log(err)
+      console.log(err)
     })
 })
 
