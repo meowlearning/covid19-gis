@@ -583,5 +583,9 @@ router.get('/graphinfo', async (req, res, next) => {
     })
 })
 
+router.get('/docs', async (req, res, next) => {
+  res.sendFile('public/api-docs/index.html', {root: './'})
+})
+
 module.exports = router;
 
