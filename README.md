@@ -18,6 +18,8 @@ New Project for COVID19 with new Datasource and revamped back-end + front-end
 ## Website
 https://covid-19-data-visualisation.herokuapp.com/
 
+## API docs
+https://covid-19-data-visualisation.herokuapp.com/api/docs
 
 ## How to install (please run this before any of the below!!!)
 1. ``` npm i --prefix server ```

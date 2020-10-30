@@ -86,14 +86,7 @@ class App extends Component {
     this.getGISData();
 
     // get countries
-    let countries = sessionStorage.getItem("countries");
-    if (countries) {
-      countries = JSON.parse(countries);
-      this.setState({
-        countries: countries
-      })
-    } else {
-      this.getRegions()
+    this.getRegions()
         .then(async ({ data: {result} }) => {
 
           result.unshift({
@@ -108,12 +101,8 @@ class App extends Component {
           this.setState({
             countries: result,
           })
-
-          // store data in session storage for later use
-          sessionStorage.setItem("countries", JSON.stringify(result))
         })
         .catch(err => console.log(err))
-    }
 
     // setup global info and global's graph
     this.setState({

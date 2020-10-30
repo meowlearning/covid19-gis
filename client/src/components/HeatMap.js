@@ -10,9 +10,7 @@ const { Option } = Select;
 
 
 const Marker = props => (
-    <React.Fragment>
-        <EnvironmentFilled style={{ fontSize: '30px' }} />
-    </React.Fragment>
+    <EnvironmentFilled style={{ fontSize: '30px' }} />
 )
 
 class HeatMap extends Component {

@@ -9,6 +9,32 @@ beforeAll(done => {
     app.on('ready', done)
 });
 
+describe('GET /api/gis', () => {
+    it('gis data not empty', async done => {
+        const res = await request.get('/api/gis')
+        expect(res.status).toBe(200)
+        expect(res.body).toHaveProperty('result')
+        expect(res.body.result.length).toBeGreaterThan(0)
+        done()
+    })
+
+    it('gis data property not empty', async done => {
+        const res = await request.get('/api/gis')
+        expect(res.status).toBe(200)
+        expect(res.body.result[0]).toHaveProperty('_id')
+        expect(res.body.result[0]).toHaveProperty('country')
+        expect(res.body.result[0]).toHaveProperty('population')
+        expect(res.body.result[0]).toHaveProperty('date')
+        expect(res.body.result[0]).toHaveProperty('confirmed')
+        expect(res.body.result[0]).toHaveProperty('deaths')
+        expect(res.body.result[0]).toHaveProperty('recovered')
+        expect(res.body.result[0]).toHaveProperty('incidence')
+        expect(res.body.result[0]).toHaveProperty('fatality')
+        expect(res.body.result[0]).toHaveProperty('coords')
+        done()
+    })
+})
+
 describe('GET /api/regions', () => {
     it('country not empty', async done => {
         const res = await request.get('/api/regions')
@@ -75,33 +101,7 @@ describe('GET /api/regions?country=US&state=New York', () => {
     })
 })
 
-describe('GET /api/gis', () => {
-    it('gis data not empty', async done => {
-        const res = await request.get('/api/gis')
-        expect(res.status).toBe(200)
-        expect(res.body).toHaveProperty('result')
-        expect(res.body.result.length).toBeGreaterThan(0)
-        done()
-    })
-
-    it('gis data property not empty', async done => {
-        const res = await request.get('/api/gis')
-        expect(res.status).toBe(200)
-        expect(res.body.result[0]).toHaveProperty('_id')
-        expect(res.body.result[0]).toHaveProperty('country')
-        expect(res.body.result[0]).toHaveProperty('population')
-        expect(res.body.result[0]).toHaveProperty('date')
-        expect(res.body.result[0]).toHaveProperty('confirmed')
-        expect(res.body.result[0]).toHaveProperty('deaths')
-        expect(res.body.result[0]).toHaveProperty('recovered')
-        expect(res.body.result[0]).toHaveProperty('incidence')
-        expect(res.body.result[0]).toHaveProperty('fatality')
-        expect(res.body.result[0]).toHaveProperty('coords')
-        done()
-    })
-})
-
-describe('GET /api/graphino', () => {
+describe('GET /api/graphinfo', () => {
     it('Global data not empty', async done => {
         const res = await request.get('/api/graphinfo')
         expect(res.status).toBe(200)

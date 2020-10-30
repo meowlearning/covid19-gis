@@ -1,0 +1,204 @@
+{
+    "numFailedTestSuites": 0,
+    "numFailedTests": 0,
+    "numPassedTestSuites": 1,
+    "numPassedTests": 16,
+    "numPendingTestSuites": 0,
+    "numPendingTests": 0,
+    "numRuntimeErrorTestSuites": 0,
+    "numTodoTests": 0,
+    "numTotalTestSuites": 1,
+    "numTotalTests": 16,
+    "openHandles": [],
+    "snapshot": {
+        "added": 0,
+        "didUpdate": false,
+        "failure": false,
+        "filesAdded": 0,
+        "filesRemoved": 0,
+        "filesRemovedList": [],
+        "filesUnmatched": 0,
+        "filesUpdated": 0,
+        "matched": 0,
+        "total": 0,
+        "unchecked": 0,
+        "uncheckedKeysByFile": [],
+        "unmatched": 0,
+        "updated": 0
+    },
+    "startTime": 1604034261267,
+    "success": true,
+    "testResults": [
+        {
+            "assertionResults": [
+                {
+                    "ancestorTitles": [
+                        "GET /api/gis"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/gis gis data not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "gis data not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/gis"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/gis gis data property not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "gis data property not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/regions"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/regions country not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "country not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/regions"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/regions country property not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "country property not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/regions?country=US"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/regions?country=US state not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "state not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/regions?country=US"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/regions?country=US correct state property",
+                    "location": null,
+                    "status": "passed",
+                    "title": "correct state property"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/regions?country=US&state=New York"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/regions?country=US&state=New York county not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "county not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/regions?country=US&state=New York"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/regions?country=US&state=New York correct county property",
+                    "location": null,
+                    "status": "passed",
+                    "title": "correct county property"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/graphinfo"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/graphinfo Global data not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "Global data not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/graphinfo"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/graphinfo Global property not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "Global property not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/graphinfo?country=US"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/graphinfo?country=US Country data not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "Country data not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/graphinfo?country=US"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/graphinfo?country=US Correct country property",
+                    "location": null,
+                    "status": "passed",
+                    "title": "Correct country property"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/graphinfo?country=US&state=New York"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/graphinfo?country=US&state=New York state data not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "state data not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/graphinfo?country=US&state=New York"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/graphinfo?country=US&state=New York Correct state property",
+                    "location": null,
+                    "status": "passed",
+                    "title": "Correct state property"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/graphinfo?country=US&state=New York&county=Albany"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/graphinfo?country=US&state=New York&county=Albany county data not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "county data not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/graphinfo?country=US&state=New York&county=Albany"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/graphinfo?country=US&state=New York&county=Albany Correct county property",
+                    "location": null,
+                    "status": "passed",
+                    "title": "Correct county property"
+                }
+            ],
+            "endTime": 1604034266912,
+            "message": "",
+            "name": "/home/jerrynguyen/project/covid19-gis/server/routes/api.test.js",
+            "startTime": 1604034261876,
+            "status": "passed",
+            "summary": ""
+        }
+    ],
+    "wasInterrupted": false
+}

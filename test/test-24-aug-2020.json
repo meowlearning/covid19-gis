@@ -1,0 +1,64 @@
+{
+    "numFailedTestSuites": 0,
+    "numFailedTests": 0,
+    "numPassedTestSuites": 1,
+    "numPassedTests": 2,
+    "numPendingTestSuites": 0,
+    "numPendingTests": 0,
+    "numRuntimeErrorTestSuites": 0,
+    "numTodoTests": 0,
+    "numTotalTestSuites": 1,
+    "numTotalTests": 2,
+    "openHandles": [],
+    "snapshot": {
+        "added": 0,
+        "didUpdate": false,
+        "failure": false,
+        "filesAdded": 0,
+        "filesRemoved": 0,
+        "filesRemovedList": [],
+        "filesUnmatched": 0,
+        "filesUpdated": 0,
+        "matched": 0,
+        "total": 0,
+        "unchecked": 0,
+        "uncheckedKeysByFile": [],
+        "unmatched": 0,
+        "updated": 0
+    },
+    "startTime": 1604034115554,
+    "success": true,
+    "testResults": [
+        {
+            "assertionResults": [
+                {
+                    "ancestorTitles": [
+                        "GET /api/gis"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/gis gis data not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "gis data not empty"
+                },
+                {
+                    "ancestorTitles": [
+                        "GET /api/gis"
+                    ],
+                    "failureMessages": [],
+                    "fullName": "GET /api/gis gis data property not empty",
+                    "location": null,
+                    "status": "passed",
+                    "title": "gis data property not empty"
+                }
+            ],
+            "endTime": 1604034121389,
+            "message": "",
+            "name": "/home/jerrynguyen/project/covid19-gis/server/routes/api.test.js",
+            "startTime": 1604034116159,
+            "status": "passed",
+            "summary": ""
+        }
+    ],
+    "wasInterrupted": false
+}
