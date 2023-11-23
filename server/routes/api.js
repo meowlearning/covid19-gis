@@ -18,35 +18,24 @@ const redis_get = promisify(redis_client.get).bind(redis_client);
  * requested country and state
  */
 router.get('/regions', async (req, res, next) => {
-  const covid19jhu = req.app.mongodb.db("covid19jhu");
+  const covid19 = req.app.mongodb.db("covid19");
   let country = req.query.country === undefined ? '' : req.query.country;
   let state = req.query.state === undefined ? '' : req.query.state;
   let key = `regions_${country}_${state}`;
 
   let pipeline = [
     {
-      '$match': {
-        'Lat': {
-          '$nin': [
-            ''
-          ]
-        },
-        'Long_': {
-          '$nin': [
-            ''
-          ]
-        }
-      }
+      '$match': {}
     }, {
       '$group': {
         '_id': {
-          'country': '$Country_Region'
+          'country': '$country'
         },
         'lat': {
-          '$first': '$Lat'
+          '$first': {$arrayElemAt: ["$loc.coordinates", 1]}
         },
         'lng': {
-          '$first': '$Long_'
+          '$first': {$arrayElemAt: ["$loc.coordinates", 0]}
         }
       }
     }, {
@@ -58,17 +47,18 @@ router.get('/regions', async (req, res, next) => {
 
   if (country != '') {
     // if countries is defined return list of states without the country itself
-    pipeline[0]['$match']['Country_Region'] = country;
-    pipeline[0]['$match']['Province_State'] = { '$nin': [""] }
-    pipeline[1]['$group']['_id']['state'] = '$Province_State'
+    pipeline[0]['$match']['country'] = country;
+    pipeline[0]['$match']['state'] = { '$nin': [""] }
+    pipeline[1]['$group']['_id']['state'] = '$state'
 
     // if state is defined return list of counties, without country and states itself
     if (state != '') {
-      pipeline[0]['$match']['Province_State'] = state;
-      pipeline[0]['$match']['Admin2'] = { '$nin': [""] };
-      pipeline[1]['$group']['_id']['county'] = '$Admin2';
+      pipeline[0]['$match']['state'] = state;
+      pipeline[0]['$match']['county'] = { '$nin': [""] };
+      pipeline[1]['$group']['_id']['county'] = '$county';
     }
   }
+  console.log(pipeline)
 
   // try to get data from redis
   redis_get(key)
@@ -78,7 +68,7 @@ router.get('/regions', async (req, res, next) => {
         throw `Caught '${key}' in cache`;
       } else {
         // return data from mongodb
-        return covid19jhu.collection("UID_ISO_FIPS_LookUp_Table").aggregate(pipeline).toArray()
+        return covid19.collection("global_and_us").aggregate(pipeline).toArray()
       }
     })
     .then(async (result) => {
