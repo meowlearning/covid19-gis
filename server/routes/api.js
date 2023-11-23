@@ -25,7 +25,9 @@ router.get('/regions', async (req, res, next) => {
 
   let pipeline = [
     {
-      '$match': {}
+      '$match': {
+        'country': { '$nin': ["Summer Olympics 2020", "Winter Olympics 2022"] }
+      }
     }, {
       '$group': {
         '_id': {
@@ -58,7 +60,6 @@ router.get('/regions', async (req, res, next) => {
       pipeline[1]['$group']['_id']['county'] = '$county';
     }
   }
-  console.log(pipeline)
 
   // try to get data from redis
   redis_get(key)
