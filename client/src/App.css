@@ -22,3 +22,9 @@
   html{
     overflow-x: hidden; 
   }
+
+  @media screen and (max-width: 992px) {
+    .column {
+      flex: 100% !important; /* !important so that it overrides the inline style because by default it has higher priority */
+    }
+  }

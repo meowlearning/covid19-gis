@@ -335,10 +335,9 @@ class App extends Component {
           >
             <Row
               gutter={[8, 8]}
-              type="flex"
             >
               {/** Region Selection */}
-              <Col span={5}>
+              <Col flex="1 0 25%">
                 <Card
                   title={`Region Selection`}
                   extra={<CustomTooltip info={this.state.info} />}
@@ -418,7 +417,7 @@ class App extends Component {
                 </Card>
               </Col>
               {/** Content */}
-              <Col span={13}>
+              <Col flex="1 0 50%">
                 <Row gutter={[8, 8]}>
                   <Col key="Heatmap" span={24}>
                     <HeatMap
@@ -438,7 +437,7 @@ class App extends Component {
                   </Col>
                 </Row>
               </Col>
-              <Col span={6}>
+              <Col flex="1 0 25%">
                 <Row gutter={[8, 8]}>
                   <Col key="Region-Info" span={24}>
                     <RegionInfo
