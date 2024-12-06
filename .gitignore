@@ -105,3 +105,4 @@ dist
 
 # React build folder
 build/
+.vercel
