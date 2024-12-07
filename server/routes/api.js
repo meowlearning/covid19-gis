@@ -132,15 +132,34 @@ router.get('/gis', async (req, res, next) => {
   const covid19 = req.db;
 
   //  get data from cache
+  const blockBlobClient = containerClient.getBlockBlobClient(key);
+
   redis_get(key)
     .then(async (result) => {
       if (result) {
         res.status(200).json(JSON.parse(result));
-        throw `Caught '${key}' in cache`;
-      } else {
-        // get the data from mongodb, starting with last date
-        return covid19.collection("metadata").findOne()
+        throw `Caught '${key}' in Redis cache`;
       }
+      // try Azure blob storage next
+      return blockBlobClient.download();
+    })
+    .then(async (azureResponse) => {
+      // Convert blob stream to string
+      const chunks = [];
+      for await (const chunk of azureResponse.readableStreamBody) {
+        chunks.push(chunk.toString());
+      }
+      const data = chunks.join("");
+      res.status(200).json(JSON.parse(data));
+      throw `Caught '${key}' in Azure blob`;
+    })
+    .catch(async (err) => {
+      if (err.startsWith('Caught')) {
+        console.log(err);
+        return;
+      }
+      // get the data from mongodb, starting with last date
+      return covid19.collection("metadata").findOne()
     })
     .then(async ({ last_date }) => {
       //  build pipeline and aggregate
@@ -268,11 +287,24 @@ router.get('/gis', async (req, res, next) => {
       return covid19.collection("global_and_us").aggregate(pipeline).toArray()
     })
     .then(async (result) => {
-      // store the result from mongodb to redis
-      redis_client.setex(key, 28800, JSON.stringify({ source: "Redis Cache", result: result }));
+      // Store in Redis
+      redis_client.setex(key, 28800, JSON.stringify({ 
+        source: "Redis Cache", 
+        result: result 
+      }));
 
-      // send the result back to client
-      return res.send({ source: "Mongodb", result: result });
+      // Store in Azure blob
+      const blobData = JSON.stringify({ 
+        source: "Azure Blob", 
+        result: result 
+      });
+      await blockBlobClient.upload(blobData, blobData.length);
+
+      // Send response
+      res.send({ 
+        source: "MongoDB", 
+        result: result 
+      });
     })
     .catch(err => {
       console.log(err)
@@ -595,22 +627,54 @@ router.get('/graphinfo', async (req, res, next) => {
     }
   ]
 
+  const blockBlobClient = containerClient.getBlockBlobClient(key);
+
   redis_get(key)
     .then(async (result) => {
       if (result) {
         res.status(200).json(JSON.parse(result));
-        throw `Caught '${key}' in cache`;
-      } else {
-        // get data from database and store in cache
-        return covid19.collection("global_and_us").aggregate(pipeline, { allowDiskUse: true }).toArray()
+        throw `Caught '${key}' in Redis cache`;
       }
+      // try Azure blob storage next
+      return blockBlobClient.download();
+    })
+    .then(async (azureResponse) => {
+      // Convert blob stream to string
+      const chunks = [];
+      for await (const chunk of azureResponse.readableStreamBody) {
+        chunks.push(chunk.toString());
+      }
+      const data = chunks.join("");
+      res.status(200).json(JSON.parse(data));
+      throw `Caught '${key}' in Azure blob`;
+    })
+    .catch(async (err) => {
+      if (err.startsWith('Caught')) {
+        console.log(err);
+        return;
+      }
+      // get data from database and store in cache
+      return covid19.collection("global_and_us").aggregate(pipeline, { allowDiskUse: true }).toArray()
     })
     .then(async (result) => {
-      // store the result from mongodb to cache
-      redis_client.setex(key, 28800, JSON.stringify({ source: "Redis Cache", result: result }));
+      // Store in Redis
+      redis_client.setex(key, 28800, JSON.stringify({ 
+        source: "Redis Cache", 
+        result: result 
+      }));
 
-      // send the retult back to client
-      return res.send({ source: "Mongodb", result: result });
+      // Store in Azure blob
+      const blobData = JSON.stringify({ 
+        source: "Azure Blob", 
+        result: result 
+      });
+      await blockBlobClient.upload(blobData, blobData.length);
+
+      // Send response
+      res.send({ 
+        source: "MongoDB", 
+        result: result 
+      });
     })
     .catch(err => {
       console.log(err)
