@@ -38,8 +38,10 @@ app.use(async (req, res, next) => {
 // API routes
 app.use('/api', async (req, res, next) => {
   res.on('finish', function () {
-    // Close database connection on finish
-    DatabaseConnection.closeConnection();
+    // Close database connection on finish if running under vercel environment
+    if (process.env.VERCEL) {
+      DatabaseConnection.closeConnection();
+    }
   });
   next();
 }, apiRouter);

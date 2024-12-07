@@ -4,6 +4,8 @@ const router = express.Router();
 const redis = require('redis');
 const { promisify } = require("util");
 const { BlobServiceClient } = require('@azure/storage-blob');
+const ServerlessHttp = require('serverless-http');
+
 
 // load environment variables
 require('dotenv').config()
@@ -16,8 +18,8 @@ const containerClient = blobServiceClient.getContainerClient(containerName);
 
 // Create the container if it doesn't exist
 containerClient.create()
-    .then(result => console.log(`Container "${containerName}" created/verified at ${result?.date || new Date()}`))
-    .catch(err => console.log('Container exists or error:', err?.details || err))
+  .then(result => console.log(`Container "${containerName}" created/verified at ${result?.date || new Date()}`))
+  .catch(err => console.log('Container exists or error:', err?.details || err))
 
 //  create redis client and connect to redis server
 const redis_url = process.env.REDIS_URL || "redis://127.0.0.1";
@@ -82,49 +84,46 @@ router.get('/regions', async (req, res, next) => {
   redis_get(key)
     .then(async (result) => {
       if (result) {
+        console.log(`Caught '${key}' in Redis cache`)
         res.status(200).json(JSON.parse(result));
-        throw `Caught '${key}' in Redis cache`;
-      }
-      // try Azure blob storage next
-      return blockBlobClient.download();
-    })
-    .then(async (azureResponse) => {
-      // Convert blob stream to string
-      const chunks = [];
-      for await (const chunk of azureResponse.readableStreamBody) {
-        chunks.push(chunk.toString());
-      }
-      const data = chunks.join("");
-      res.status(200).json(JSON.parse(data));
-      throw `Caught '${key}' in Azure blob`;
-    })
-    .catch(async (err) => {
-      if (err.startsWith('Caught')) {
-        console.log(err);
-        return;
-      }
-      // If not in either cache, get from MongoDB
-      const result = await covid19.collection("global_and_us").aggregate(pipeline).toArray();
-      
-      // Store in Redis
-      redis_client.setex(key, 28800, JSON.stringify({ 
-        source: "Redis Cache", 
-        result: result 
-      }));
+      } else { // key not in redis
+        blockBlobClient.download()
+          .then(AzureResponse => streamToString(AzureResponse.readableStreamBody))
+          .then(data => {
+            console.log(`Caught '${key}' in Azure blob`);
+            res.status(200).json(JSON.parse(data));
+          })
+          .catch(err => {
+            if (err.details.errorCode === 'BlobNotFound') { // no cache found in redis nor azure blob
+              covid19.collection("global_and_us").aggregate(pipeline).toArray()
+                .then(result => {
+                  // Store in Redis
+                  redis_client.setex(key, 28800, JSON.stringify({
+                    source: "Redis Cache",
+                    result: result
+                  }));
 
-      // Store in Azure blob
-      const blobData = JSON.stringify({ 
-        source: "Azure Blob", 
-        result: result 
-      });
-      await blockBlobClient.upload(blobData, blobData.length);
+                  // Store in Azure blob
+                  const blobData = JSON.stringify({
+                    source: "Azure Blob",
+                    result: result
+                  });
+                  blockBlobClient.upload(blobData, blobData.length);
 
-      // Send response
-      res.send({ 
-        source: "MongoDB", 
-        result: result 
-      });
+                  // Send response
+                  res.send({
+                    source: "MongoDB",
+                    result: result
+                  });
+                })
+                .catch(err => console.log(err))
+            } else {
+              console.log(err.details.errorCode)
+            }
+          })
+      }
     })
+    .catch(err => console.log(err))
 })
 
 router.get('/gis', async (req, res, next) => {
@@ -137,178 +136,173 @@ router.get('/gis', async (req, res, next) => {
   redis_get(key)
     .then(async (result) => {
       if (result) {
+        console.log(`Caught '${key}' in Redis cache`);
         res.status(200).json(JSON.parse(result));
-        throw `Caught '${key}' in Redis cache`;
-      }
-      // try Azure blob storage next
-      return blockBlobClient.download();
-    })
-    .then(async (azureResponse) => {
-      // Convert blob stream to string
-      const chunks = [];
-      for await (const chunk of azureResponse.readableStreamBody) {
-        chunks.push(chunk.toString());
-      }
-      const data = chunks.join("");
-      res.status(200).json(JSON.parse(data));
-      throw `Caught '${key}' in Azure blob`;
-    })
-    .catch(async (err) => {
-      if (err.startsWith('Caught')) {
-        console.log(err);
-        return;
-      }
-      // get the data from mongodb, starting with last date
-      return covid19.collection("metadata").findOne()
-    })
-    .then(async ({ last_date }) => {
-      //  build pipeline and aggregate
-      let pipeline = [
-        {
-          '$match': {
-            'loc': {
-              '$exists': true
-            },
-            'date': last_date
-          }
-        }, {
-          '$lookup': {
-            'from': 'global_and_us',
-            'let': {
-              'cur_country': '$country',
-              'cur_state': '$state',
-              'cur_county': '$county',
-              'cur_date': {
-                '$subtract': [
-                  '$date', 86400 * 1000 * 365
-                ]
-              }
-            },
-            'pipeline': [
-              {
-                '$match': {
-                  '$expr': {
-                    '$and': [
-                      {
-                        '$eq': [
-                          '$country', '$$cur_country'
-                        ]
-                      }, {
-                        '$eq': [
-                          '$state', '$$cur_state'
-                        ]
-                      }, {
-                        '$eq': [
-                          '$county', '$$cur_county'
-                        ]
-                      }, {
-                        '$eq': [
-                          '$date', '$$cur_date'
-                        ]
+      } else { // no redis cache found
+        blockBlobClient.download()
+          .then(AzureResponse => streamToString(AzureResponse.readableStreamBody))
+          .then(data => {
+            console.log(`Caught '${key}' in Azure blob`);
+            res.status(200).json(JSON.parse(data));
+          })
+          .catch(err => {
+            if (err.details.errorCode === 'BlobNotFound') { // no cache found in redis nor azure blob
+              covid19.collection("metadata").findOne()
+                .then(async ({ last_date }) => {
+                  //  build pipeline and aggregate
+                  let pipeline = [
+                    {
+                      '$match': {
+                        'loc': {
+                          '$exists': true
+                        },
+                        'date': last_date
                       }
-                    ]
-                  }
-                }
-              }
-            ],
-            'as': 'result'
-          }
-        }, {
-          '$project': {
-            'country': 1,
-            'state': 1,
-            'county': 1,
-            'coords': '$loc.coordinates',
-            'confirmed': 1,
-            'recovered': {
-              '$ifNull': [
-                '$recovered', 0
-              ]
-            },
-            'deaths': 1,
-            'yearly_confirmed': {
-              '$subtract': [
-                '$confirmed', {
-                  '$ifNull': [
-                    {
-                      '$arrayElemAt': [
-                        '$result.confirmed', 0
-                      ]
-                    }, 0
+                    }, {
+                      '$lookup': {
+                        'from': 'global_and_us',
+                        'let': {
+                          'cur_country': '$country',
+                          'cur_state': '$state',
+                          'cur_county': '$county',
+                          'cur_date': {
+                            '$subtract': [
+                              '$date', 86400 * 1000 * 365
+                            ]
+                          }
+                        },
+                        'pipeline': [
+                          {
+                            '$match': {
+                              '$expr': {
+                                '$and': [
+                                  {
+                                    '$eq': [
+                                      '$country', '$$cur_country'
+                                    ]
+                                  }, {
+                                    '$eq': [
+                                      '$state', '$$cur_state'
+                                    ]
+                                  }, {
+                                    '$eq': [
+                                      '$county', '$$cur_county'
+                                    ]
+                                  }, {
+                                    '$eq': [
+                                      '$date', '$$cur_date'
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        'as': 'result'
+                      }
+                    }, {
+                      '$project': {
+                        'country': 1,
+                        'state': 1,
+                        'county': 1,
+                        'coords': '$loc.coordinates',
+                        'confirmed': 1,
+                        'recovered': {
+                          '$ifNull': [
+                            '$recovered', 0
+                          ]
+                        },
+                        'deaths': 1,
+                        'yearly_confirmed': {
+                          '$subtract': [
+                            '$confirmed', {
+                              '$ifNull': [
+                                {
+                                  '$arrayElemAt': [
+                                    '$result.confirmed', 0
+                                  ]
+                                }, 0
+                              ]
+                            }
+                          ]
+                        },
+                        'date': 1,
+                        'population': 1
+                      }
+                    }, {
+                      '$addFields': {
+                        'active': {
+                          '$subtract': [
+                            {
+                              '$subtract': [
+                                '$confirmed', '$deaths'
+                              ]
+                            }, '$recovered'
+                          ]
+                        },
+                        'incidence': {
+                          '$divide': [
+                            {
+                              '$multiply': [
+                                '$yearly_confirmed', 100000
+                              ]
+                            }, '$population'
+                          ]
+                        },
+                        'fatality': {
+                          '$cond': [
+                            {
+                              '$eq': [
+                                '$confirmed', 0
+                              ]
+                            }, 0, {
+                              '$multiply': [
+                                {
+                                  '$divide': [
+                                    '$deaths', '$confirmed'
+                                  ]
+                                }, 100
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    }
                   ]
-                }
-              ]
-            },
-            'date': 1,
-            'population': 1
-          }
-        }, {
-          '$addFields': {
-            'active': {
-              '$subtract': [
-                {
-                  '$subtract': [
-                    '$confirmed', '$deaths'
-                  ]
-                }, '$recovered'
-              ]
-            },
-            'incidence': {
-              '$divide': [
-                {
-                  '$multiply': [
-                    '$yearly_confirmed', 100000
-                  ]
-                }, '$population'
-              ]
-            },
-            'fatality': {
-              '$cond': [
-                {
-                  '$eq': [
-                    '$confirmed', 0
-                  ]
-                }, 0, {
-                  '$multiply': [
-                    {
-                      '$divide': [
-                        '$deaths', '$confirmed'
-                      ]
-                    }, 100
-                  ]
-                }
-              ]
+
+                  // aggregate and get the result
+                  return covid19.collection("global_and_us").aggregate(pipeline).toArray()
+                })
+                .then(async (result) => {
+                  // Store in Redis
+                  redis_client.setex(key, 28800, JSON.stringify({
+                    source: "Redis Cache",
+                    result: result
+                  }));
+
+                  // Store in Azure blob
+                  const blobData = JSON.stringify({
+                    source: "Azure Blob",
+                    result: result
+                  });
+                  blockBlobClient.upload(blobData, blobData.length);
+
+                  // Send response
+                  res.send({
+                    source: "MongoDB",
+                    result: result
+                  });
+                })
+                .catch(err => {
+                  console.log(err)
+                })
+            } else {
+              console.log(err.details.errorCode)
             }
-          }
-        }
-      ]
-
-      // aggregate and get the result
-      return covid19.collection("global_and_us").aggregate(pipeline).toArray()
+          })
+      }
     })
-    .then(async (result) => {
-      // Store in Redis
-      redis_client.setex(key, 28800, JSON.stringify({ 
-        source: "Redis Cache", 
-        result: result 
-      }));
-
-      // Store in Azure blob
-      const blobData = JSON.stringify({ 
-        source: "Azure Blob", 
-        result: result 
-      });
-      await blockBlobClient.upload(blobData, blobData.length);
-
-      // Send response
-      res.send({ 
-        source: "MongoDB", 
-        result: result 
-      });
-    })
-    .catch(err => {
-      console.log(err)
-    })
+    .catch(err => console.log(err))
 })
 
 router.get('/graphinfo', async (req, res, next) => {
@@ -632,58 +626,66 @@ router.get('/graphinfo', async (req, res, next) => {
   redis_get(key)
     .then(async (result) => {
       if (result) {
+        console.log(`Caught '${key}' in Redis cache`);
         res.status(200).json(JSON.parse(result));
-        throw `Caught '${key}' in Redis cache`;
-      }
-      // try Azure blob storage next
-      return blockBlobClient.download();
-    })
-    .then(async (azureResponse) => {
-      // Convert blob stream to string
-      const chunks = [];
-      for await (const chunk of azureResponse.readableStreamBody) {
-        chunks.push(chunk.toString());
-      }
-      const data = chunks.join("");
-      res.status(200).json(JSON.parse(data));
-      throw `Caught '${key}' in Azure blob`;
-    })
-    .catch(async (err) => {
-      if (err.startsWith('Caught')) {
-        console.log(err);
-        return;
-      }
-      // get data from database and store in cache
-      return covid19.collection("global_and_us").aggregate(pipeline, { allowDiskUse: true }).toArray()
-    })
-    .then(async (result) => {
-      // Store in Redis
-      redis_client.setex(key, 28800, JSON.stringify({ 
-        source: "Redis Cache", 
-        result: result 
-      }));
+      } else { // no redis cache found
+        // try azure blob
+        blockBlobClient.download()
+          .then(AzureResponse => streamToString(AzureResponse.readableStreamBody))
+          .then(data => {
+            console.log(`Caught '${key}' in Azure blob`);
+            res.status(200).json(JSON.parse(data));
+          })
+          .catch(err => {
+            if (err.details.errorCode === 'BlobNotFound') { // no cache found in azure blob
+              covid19.collection("global_and_us").aggregate(pipeline, { allowDiskUse: true }).toArray()
+                .then(async (result) => {
+                  // Store in Redis
+                  redis_client.setex(key, 28800, JSON.stringify({
+                    source: "Redis Cache",
+                    result: result
+                  }));
 
-      // Store in Azure blob
-      const blobData = JSON.stringify({ 
-        source: "Azure Blob", 
-        result: result 
-      });
-      await blockBlobClient.upload(blobData, blobData.length);
+                  // Store in Azure blob
+                  const blobData = JSON.stringify({
+                    source: "Azure Blob",
+                    result: result
+                  });
+                  blockBlobClient.upload(blobData, blobData.length);
 
-      // Send response
-      res.send({ 
-        source: "MongoDB", 
-        result: result 
-      });
+                  // Send response
+                  res.send({
+                    source: "MongoDB",
+                    result: result
+                  });
+                })
+                .catch(err => {
+                  console.log(err)
+                })
+            }
+          })
+      }
     })
-    .catch(err => {
-      console.log(err)
-    })
+    .catch(err => console.log(err))
+
 })
 
 router.get('/docs', async (req, res, next) => {
   res.sendFile('public/api-docs/index.html', { root: './' })
 })
+
+function streamToString(readableStream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    readableStream.on("data", (data) => {
+      chunks.push(data.toString());
+    });
+    readableStream.on("end", () => {
+      resolve(chunks.join(""));
+    });
+    readableStream.on("error", reject);
+  });
+}
 
 module.exports = router;
 

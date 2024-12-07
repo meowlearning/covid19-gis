@@ -1,17 +1,11 @@
 {
     "version": 2,
-    "buildCommand": "npm run build --prefix client",
+    "buildCommand": "",
     "installCommand": "npm install --prefix client && npm install --prefix server",
-    "builds": [
-        {
-            "src": "/server/app.js",
-            "use": "@vercel/node"
-        }
-    ],
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/server/app.js"
+            "dest": "/api/"
         }
     ]
 }
