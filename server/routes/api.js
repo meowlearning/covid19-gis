@@ -116,14 +116,14 @@ router.get('/regions', async (req, res, next) => {
                     result: result
                   });
                 })
-                .catch(err => console.log(err))
+                .catch(err => console.error(err))
             } else {
               console.log(err.details.errorCode)
             }
           })
       }
     })
-    .catch(err => console.log(err))
+    .catch(err => console.error(err))
 })
 
 router.get('/gis', async (req, res, next) => {
@@ -294,15 +294,15 @@ router.get('/gis', async (req, res, next) => {
                   });
                 })
                 .catch(err => {
-                  console.log(err)
+                  console.error(err)
                 })
             } else {
-              console.log(err.details.errorCode)
+              console.error(err.details.errorCode)
             }
           })
       }
     })
-    .catch(err => console.log(err))
+    .catch(err => console.error(err))
 })
 
 router.get('/graphinfo', async (req, res, next) => {
@@ -660,13 +660,13 @@ router.get('/graphinfo', async (req, res, next) => {
                   });
                 })
                 .catch(err => {
-                  console.log(err)
+                  console.error(err)
                 })
             }
           })
       }
     })
-    .catch(err => console.log(err))
+    .catch(err => console.error(err))
 
 })
 
