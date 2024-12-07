@@ -1,72 +1,53 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var bodyParser = require('body-parser');
-const cors = require("cors");
+const express = require('express');
+const DatabaseConnection = require('./db');
+const apiRouter = require('./routes/api'); // Your API routes
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const path = require('path');
 
-var indexRouter = require('./routes/index');
-var apiRouter = require('./routes/api');
+// Lazily initialize the app
+const app = express();
 
-var app = express();
+// Handle other routes (e.g., static files or frontend)
+app.use(express.static(path.join(__dirname, '../client/build')));
+app.use(express.static(path.join(__dirname, '/public')));
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-// logger, cookieparser, urlencoded json parser setup
+// Middleware setup
 app.use(logger('dev'));
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
-// Serve static files from the React frontend app
-app.use(express.static(path.join(__dirname, '../client/build')))
-
 app.use(cors());
+app.use(express.json());
 
-// connect to the Database
-const DATABASE_URL = "mongodb+srv://readonly:readonly@covid-19.hip2i.mongodb.net/covid19";
-const { MongoClient } = require("mongodb");
-const router = require('./routes/api');
-
-MongoClient.connect(DATABASE_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-  .then(async (db) => {
-    app.mongodb = db;
-    app.emit('ready');
-
-    const covid19 = db.db("covid19");
-    const covid19jhu = db.db("covid19jhu");
-
-    // app.use('/', indexRouter);
-    app.use('/api', apiRouter);
-
-    // catch 404 and forward to error handler
-    app.use(function (req, res, next) {
-      next(createError(404));
-    });
-
-    // error handler
-    app.use(function (err, req, res, next) {
-      // set locals, only providing error in development
-      res.locals.message = err.message;
-      res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-      // render the error page
-      res.status(err.status || 500);
-      res.render('error');
-    });
-
-  })
-  .catch(err => console.log(err))
+app.use(async (req, res, next) => {
+  try {
+    req.db = await DatabaseConnection.getConnection();
+    next();
+  } catch (err) {
+    console.error('Database connection error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
 
 
-app.on('ready', () => {
-  console.log("Connected successfully to mongodb server");
-})
 
+// Use the API routes
+// API routes
+app.use('/api', async (req, res, next) => {
+  res.on('finish', function () {
+    // Close database connection on finish
+    DatabaseConnection.closeConnection();
+  });
+  next();
+}, apiRouter);
+
+// Handle 404 errors
+app.use((req, res) => {
+  res.status(404).send("Not Found");
+});
+
+// Export the serverless function
 module.exports = app;

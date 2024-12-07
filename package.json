@@ -4,6 +4,5 @@
   "scripts": {
     "postinstall": "npm install --prefix server && npm install --prefix client",
     "heroku-postbuild": "npm run build --prefix client"
-  },
-  "dependencies": {}
+  }
 }

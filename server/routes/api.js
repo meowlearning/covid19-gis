@@ -1,8 +1,11 @@
 const express = require('express');
+const path = require('path');
 const router = express.Router();
 const redis = require('redis');
 const { promisify } = require("util");
 
+// load the vercel redis url while in production and preview environment
+require('dotenv').config()
 
 //  create redis client and connect to redis server
 const redis_url = process.env.REDIS_URL || "redis://127.0.0.1";
@@ -18,7 +21,7 @@ const redis_get = promisify(redis_client.get).bind(redis_client);
  * requested country and state
  */
 router.get('/regions', async (req, res, next) => {
-  const covid19 = req.app.mongodb.db("covid19");
+  const covid19 = req.db;
   let country = req.query.country === undefined ? '' : req.query.country;
   let state = req.query.state === undefined ? '' : req.query.state;
   let key = `regions_${country}_${state}`;
@@ -34,10 +37,10 @@ router.get('/regions', async (req, res, next) => {
           'country': '$country'
         },
         'lat': {
-          '$first': {$arrayElemAt: ["$loc.coordinates", 1]}
+          '$first': { $arrayElemAt: ["$loc.coordinates", 1] }
         },
         'lng': {
-          '$first': {$arrayElemAt: ["$loc.coordinates", 0]}
+          '$first': { $arrayElemAt: ["$loc.coordinates", 0] }
         }
       }
     }, {
@@ -86,7 +89,7 @@ router.get('/regions', async (req, res, next) => {
 
 router.get('/gis', async (req, res, next) => {
   let key = "world_gis";
-  const covid19 = req.app.mongodb.db("covid19");
+  const covid19 = req.db;
 
   //  get data from cache
   redis_get(key)
@@ -237,7 +240,7 @@ router.get('/gis', async (req, res, next) => {
 })
 
 router.get('/graphinfo', async (req, res, next) => {
-  const covid19 = req.app.mongodb.db("covid19");
+  const covid19 = req.db;
   let country = req.query.country === undefined ? '' : req.query.country;
   let state = req.query.state === undefined ? '' : req.query.state;
   let county = req.query.county === undefined ? '' : req.query.county;
@@ -575,7 +578,7 @@ router.get('/graphinfo', async (req, res, next) => {
 })
 
 router.get('/docs', async (req, res, next) => {
-  res.sendFile('public/api-docs/index.html', {root: './'})
+  res.sendFile('public/api-docs/index.html', { root: './' })
 })
 
 module.exports = router;
