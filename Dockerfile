@@ -1,5 +1,5 @@
 # Use a newest stable version of Node as a parent image
-FROM node:erbium
+FROM node:gallium
 # Install concurrently to start server and client together
 RUN npm i -g concurrently
 

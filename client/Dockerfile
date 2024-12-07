@@ -1,5 +1,5 @@
 # Use a newest stable version of Node as a parent image
-FROM node:erbium
+FROM node:gallium
 # Copy the current directory contents into the container at /client
 COPY . /client/
 # Set the working directory to /client

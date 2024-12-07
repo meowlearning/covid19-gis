@@ -1,5 +1,5 @@
 # Use a newest stable version of Node as a parent image
-FROM node:erbium
+FROM node:gallium
 # Copy the current directory contents into the container at /api
 COPY . /server/
 # Set the working directory to /api
