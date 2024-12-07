@@ -55,7 +55,7 @@ class App extends Component {
           gis: result
         })
       })
-      .catch(err => console.log(err))
+      .catch(err => console.error(err))
   }
 
   /**
@@ -102,7 +102,7 @@ class App extends Component {
             countries: result,
           })
         })
-        .catch(err => console.log(err))
+        .catch(err => console.error(err))
 
     // setup global info and global's graph
     this.setState({
@@ -118,7 +118,7 @@ class App extends Component {
           regionInfo: result[result.length - 1],
         })
       })
-      .catch(err => console.log(err))
+      .catch(err => console.error(err))
   }
 
   handleCountryOptionChange(value) {
@@ -153,7 +153,7 @@ class App extends Component {
           states: result
         })
       })
-      .catch(err => console.log(err))
+      .catch(err => console.error(err))
 
     // get country info and graph info
     this.getRegionInfo(country)
@@ -163,7 +163,7 @@ class App extends Component {
           regionInfo: result[result.length - 1]
         })
       })
-      .catch(err => console.log(err))
+      .catch(err => console.error(err))
   }
 
   handleStateOptionChange(value) {
@@ -194,7 +194,7 @@ class App extends Component {
           counties: result
         })
       })
-      .catch(err => console.log(err))
+      .catch(err => console.error(err))
 
     // get state's graphinfo
     this.getRegionInfo(this.state.SelectedCountry, state)
@@ -204,7 +204,7 @@ class App extends Component {
           regionInfo: result[result.length - 1]
         })
       })
-      .catch(err => console.log(err))
+      .catch(err => console.error(err))
   }
 
   handleCountyOptionChange(value) {
@@ -235,7 +235,7 @@ class App extends Component {
           regionInfo: result[result.length - 1]
         })
       })
-      .catch(err => console.log(err))
+      .catch(err => console.error(err))
   }
 
   handleGPSClick(GPSData) {
@@ -319,7 +319,7 @@ class App extends Component {
           })
         }
       })
-      .catch(err => console.log(err))
+      .catch(err => console.error(err))
   }
 
   setTabKey = activeKey => {
