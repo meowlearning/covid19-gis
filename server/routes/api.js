@@ -3,9 +3,21 @@ const path = require('path');
 const router = express.Router();
 const redis = require('redis');
 const { promisify } = require("util");
+const { BlobServiceClient } = require('@azure/storage-blob');
 
-// load the vercel redis url while in production and preview environment
+// load environment variables
 require('dotenv').config()
+
+// Set up azure blobs
+const CONNECT_STR = process.env.CONNECT_STR;
+const blobServiceClient = BlobServiceClient.fromConnectionString(CONNECT_STR);
+const containerName = 'covid19container';
+const containerClient = blobServiceClient.getContainerClient(containerName);
+
+// Create the container if it doesn't exist
+containerClient.create()
+    .then(result => console.log(`Container "${containerName}" created/verified at ${result?.date || new Date()}`))
+    .catch(err => console.log('Container exists or error:', err?.details || err))
 
 //  create redis client and connect to redis server
 const redis_url = process.env.REDIS_URL || "redis://127.0.0.1";
@@ -64,26 +76,54 @@ router.get('/regions', async (req, res, next) => {
     }
   }
 
-  // try to get data from redis
+  const blockBlobClient = containerClient.getBlockBlobClient(key);
+
+  // try to get data from redis first
   redis_get(key)
     .then(async (result) => {
       if (result) {
         res.status(200).json(JSON.parse(result));
-        throw `Caught '${key}' in cache`;
-      } else {
-        // return data from mongodb
-        return covid19.collection("global_and_us").aggregate(pipeline).toArray()
+        throw `Caught '${key}' in Redis cache`;
       }
+      // try Azure blob storage next
+      return blockBlobClient.download();
     })
-    .then(async (result) => {
-      // store the result from mongodb to redis
-      redis_client.setex(key, 28800, JSON.stringify({ source: "Redis Cache", result: result }))
+    .then(async (azureResponse) => {
+      // Convert blob stream to string
+      const chunks = [];
+      for await (const chunk of azureResponse.readableStreamBody) {
+        chunks.push(chunk.toString());
+      }
+      const data = chunks.join("");
+      res.status(200).json(JSON.parse(data));
+      throw `Caught '${key}' in Azure blob`;
+    })
+    .catch(async (err) => {
+      if (err.startsWith('Caught')) {
+        console.log(err);
+        return;
+      }
+      // If not in either cache, get from MongoDB
+      const result = await covid19.collection("global_and_us").aggregate(pipeline).toArray();
+      
+      // Store in Redis
+      redis_client.setex(key, 28800, JSON.stringify({ 
+        source: "Redis Cache", 
+        result: result 
+      }));
 
-      // send the result back to client
-      return res.send({ source: "Mongodb", result: result });
-    })
-    .catch(err => {
-      console.log(err)
+      // Store in Azure blob
+      const blobData = JSON.stringify({ 
+        source: "Azure Blob", 
+        result: result 
+      });
+      await blockBlobClient.upload(blobData, blobData.length);
+
+      // Send response
+      res.send({ 
+        source: "MongoDB", 
+        result: result 
+      });
     })
 })
 
