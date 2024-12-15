@@ -91,6 +91,11 @@ router.get('/regions', async (req, res, next) => {
           .then(AzureResponse => streamToString(AzureResponse.readableStreamBody))
           .then(data => {
             console.log(`Caught '${key}' in Azure blob`);
+            // store in redis
+            redis_client.setex(key, 28800, JSON.stringify({
+              source: "Redis Cache",
+              result: JSON.parse(data).result
+            }));
             res.status(200).json(JSON.parse(data));
           })
           .catch(err => {
@@ -143,6 +148,11 @@ router.get('/gis', async (req, res, next) => {
           .then(AzureResponse => streamToString(AzureResponse.readableStreamBody))
           .then(data => {
             console.log(`Caught '${key}' in Azure blob`);
+            // store in redis
+            redis_client.setex(key, 28800, JSON.stringify({
+              source: "Redis Cache",
+              result: JSON.parse(data).result
+            }));
             res.status(200).json(JSON.parse(data));
           })
           .catch(err => {
@@ -634,6 +644,11 @@ router.get('/graphinfo', async (req, res, next) => {
           .then(AzureResponse => streamToString(AzureResponse.readableStreamBody))
           .then(data => {
             console.log(`Caught '${key}' in Azure blob`);
+            // store in redis
+            redis_client.setex(key, 28800, JSON.stringify({
+              source: "Redis Cache",
+              result: JSON.parse(data).result
+            }));
             res.status(200).json(JSON.parse(data));
           })
           .catch(err => {
